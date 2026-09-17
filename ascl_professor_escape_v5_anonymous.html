@@ -1293,10 +1293,31 @@ function spawnWater(now){
 }
 function drawWater(now){
  for(const w of waterItems){
-   let bob=Math.sin(now/220+w.phase)*4;
-   x.fillStyle="#0003";x.beginPath();x.ellipse(w.x,w.y+13,16,5,0,0,7);x.fill();
-   x.font="28px sans-serif";x.textAlign="center";x.fillText("💧",w.x,w.y+bob);
-   x.fillStyle="#17324d";x.font="900 10px system-ui";x.fillText("Q 물",w.x,w.y+22+bob);
+   let bob=Math.sin(now/220+w.phase)*4.2;
+   x.save();
+   x.textAlign="center";
+   x.fillStyle="rgba(0,0,0,.22)";
+   x.beginPath();x.ellipse(w.x,w.y+16,19,6,0,0,7);x.fill();
+
+   let g=x.createRadialGradient(w.x,w.y+bob,4,w.x,w.y+bob,28);
+   g.addColorStop(0,"rgba(120,200,255,.58)");
+   g.addColorStop(.65,"rgba(120,200,255,.18)");
+   g.addColorStop(1,"rgba(120,200,255,0)");
+   x.fillStyle=g;x.beginPath();x.arc(w.x,w.y+bob,28,0,Math.PI*2);x.fill();
+
+   x.font="38px sans-serif";
+   x.lineWidth=4;
+   x.strokeStyle="rgba(255,255,255,.95)";
+   x.strokeText("💧",w.x,w.y+bob+1);
+   x.fillText("💧",w.x,w.y+bob+1);
+
+   x.fillStyle="#0b5dff";
+   x.strokeStyle="rgba(255,255,255,.98)";
+   x.lineWidth=4;
+   x.font="900 13px system-ui";
+   x.strokeText("Q 물",w.x,w.y+28+bob);
+   x.fillText("Q 물",w.x,w.y+28+bob);
+   x.restore();
  }
 }
 function useWater(){
@@ -1331,10 +1352,31 @@ function spawnLife(now){
 }
 function drawLifeItems(now){
  for(const h of lifeItems){
-   let bob=Math.sin(now/210+h.phase)*4;
-   x.fillStyle="#0003";x.beginPath();x.ellipse(h.x,h.y+15,19,6,0,0,7);x.fill();
-   x.font="34px sans-serif";x.textAlign="center";x.fillText("❤️",h.x,h.y+bob);
-   x.fillStyle="#7c1f2a";x.font="900 10px system-ui";x.fillText("목숨 +1",h.x,h.y+24+bob);
+   let bob=Math.sin(now/210+h.phase)*4.3;
+   x.save();
+   x.textAlign="center";
+   x.fillStyle="rgba(0,0,0,.22)";
+   x.beginPath();x.ellipse(h.x,h.y+17,21,7,0,0,7);x.fill();
+
+   let g=x.createRadialGradient(h.x,h.y+bob,4,h.x,h.y+bob,30);
+   g.addColorStop(0,"rgba(255,120,140,.55)");
+   g.addColorStop(.65,"rgba(255,120,140,.17)");
+   g.addColorStop(1,"rgba(255,120,140,0)");
+   x.fillStyle=g;x.beginPath();x.arc(h.x,h.y+bob,30,0,Math.PI*2);x.fill();
+
+   x.font="42px sans-serif";
+   x.lineWidth=4;
+   x.strokeStyle="rgba(255,255,255,.95)";
+   x.strokeText("❤️",h.x,h.y+bob+2);
+   x.fillText("❤️",h.x,h.y+bob+2);
+
+   x.fillStyle="#b11e38";
+   x.strokeStyle="rgba(255,255,255,.98)";
+   x.lineWidth=4;
+   x.font="900 13px system-ui";
+   x.strokeText("목숨 +1",h.x,h.y+30+bob);
+   x.fillText("목숨 +1",h.x,h.y+30+bob);
+   x.restore();
  }
 }
 function spawnFund(now){
