@@ -100,8 +100,8 @@ canvas{display:block;position:fixed;left:0;top:104px;width:100vw;height:calc(100
 </div>
 <div id="overlay">
 <div class="card" id="start">
-<h1>📚 교수님 피하기 시뮬레이터 </h1>
-<p>외부 공유용: 임의 이름을 사용하고 인물 사진을 불러오지 않습니다.<br>시작 전에 원하는 조작키를 정할 수 있습니다. 버튼을 누른 뒤 새 키를 입력하세요.</p>
+<h1>📚 교수님 피하기 시뮬레이터 · 익명 버전</h1>
+<p>익명 공유용: 아래 이름은 모두 게임용 가명이며, 인물 사진을 불러오지 않습니다.<br>시작 전에 원하는 조작키를 정할 수 있습니다. 버튼을 누른 뒤 새 키를 입력하세요.</p>
 <div class="keySetup">
  <span class="keyLabel">🚪 문 잠그기</span><button class="keyBind" data-bind="door">1</button>
  <span class="keyLabel">🍖 회식 제안</span><button class="keyBind" data-bind="dinner">2</button>
@@ -184,81 +184,81 @@ refreshBindUI();
 
 let flowDist=null,flowCols=0,flowRows=0,flowBuiltAt=0,flowGoalX=0,flowGoalY=0,flowSig=""; let W,H,VW,VH,CAM={x:0,y:0},toast="",toastUntil=0,last=0,playing=false,t0=0,lastSpawn=0,nextSpawnAllowed=0,gone=0,students=[],keys={},coffee=100,spawnedNames=new Set(),returnQueue=[],studentState=new Map(),paused=false,pauseStarted=0,money=0,funds=[],waterItems=[],lifeItems=[],waterCount=0,lastWaterSpawn=0,lastFundSpawn=0,nextLifeSpawn=0,lastRageAt=0,rageStudent=null,rageUntil=0,lives=3,hitInvUntil=0,shopOpen=false,shopSelection=0,taehunOpen=false,taehunSelection=0,lifeBuys=0,speedBuys=0,playerSpeedMult=1,controlRage=0,cogRage=0,controlStableUntil=0,cogStableUntil=0,futsalUntil=0,futsalBalls=[],bombs=[],joon=null,nextJoonAt=0;
 const prof=new Image(); // external version: no photo loaded
-const raw=[["Student 15", ""],["Student 01", ""],["Student 19", ""],["Student 18", ""],["Student 08", ""],["Student 05", ""],["Student 12", ""],["Student 07", ""],["Student 03", ""],["Student 10", ""],["Student 04", ""],["Student 17", ""],["Student 13", ""],["Student 14", ""],["Student 16", ""],["Student 02", ""],["Student 06", ""],["Student 09", ""],["Student 22", ""],["Student 11", ""],["Student 21", ""],["Student 20", ""]];
+const raw=[["박도윤", ""],["권민재", ""],["강도현", ""],["서은호", ""],["최지훈", ""],["문태경", ""],["류지안", ""],["임수빈", ""],["장하윤", ""],["오세진", ""],["홍서연", ""],["송민석", ""],["한지민", ""],["신예린", ""],["김민준", ""],["윤재현", ""],["이서준", ""],["남현준", ""],["백승민", ""],["배준호", ""],["정현우", ""],["조유진", ""]];
 const faces=raw.map(([n])=>({n,i:new Image()}));
-const JOON_FACE_NAME="Student 07";
+const JOON_FACE_NAME="임수빈";
 function joonFace(){let f=faces.find(z=>z.n===JOON_FACE_NAME);return f?f.i:null}
-const JUNIORS=new Set(["Student 04","Student 14","Student 06","Student 09","Student 21","Student 11","Student 22","Student 16"]);
-const DOCTORS=new Set(["Student 15","Student 01","Student 12","Student 03","Student 13","Student 10","Student 05","Student 18"]);
-const CONTROL=new Set(["Student 15","Student 01","Student 12","Student 03","Student 04","Student 14","Student 06","Student 09","Student 21"]);
-const COGNITION=new Set(["Student 11","Student 22","Student 16","Student 13","Student 10","Student 05","Student 18"]);
+const JUNIORS=new Set(["홍서연","신예린","이서준","남현준","정현우","배준호","백승민","김민준"]);
+const DOCTORS=new Set(["박도윤","권민재","류지안","장하윤","한지민","오세진","문태경","서은호"]);
+const CONTROL=new Set(["박도윤","권민재","류지안","장하윤","홍서연","신예린","이서준","남현준","정현우"]);
+const COGNITION=new Set(["배준호","백승민","김민준","한지민","오세진","문태경","서은호"]);
 function teamOf(name){return CONTROL.has(name)?"control":(COGNITION.has(name)?"cognition":"none")}
 function isDoctorName(name){return DOCTORS.has(name)}
 const PERSONAL_DIALOGUES={
- "Student 04":[
+ "홍서연":[
    "교수님, 잠깐만요!","이거 확인만 해주세요!","회의 10분이면 됩니다!",
    "이 결과면 다음 실험 가도 될까요?","교수님 코멘트 한 줄만요!","메일 보냈는데 직접 가져왔습니다!"
  ],
- "Student 14":[
+ "신예린":[
    "교수님, 결과 나왔어요!","이 부분만 봐주세요!","수정본 가져왔습니다!",
    "그래프가 좀 수상한데요?","이 버전으로 제출해도 될까요?","교수님 의견 듣고 싶어요!"
  ],
- "Student 06":[
+ "이서준":[
    "교수님 어디 계세요?","논문 한 페이지만요!","진짜 금방 끝나요!",
    "리뷰어 코멘트가 하나 남았어요!","이 문장 표현 괜찮을까요?","이번엔 진짜 마지막 수정입니다!"
  ],
- "Student 09":[
+ "남현준":[
    "교수님, 서명 부탁드립니다!","마감이 오늘이에요!","잠깐 상담 가능하세요?",
    "이 문서 오늘 꼭 올라가야 해요!","결재 버튼만 눌러주세요!","교수님 30초만 빌릴게요!"
  ],
- "Student 21":[
+ "정현우":[
    "교수님, 실험 로그 봐주세요!","이상한 결과가 나왔어요!","한 번만 확인해주세요!",
    "센서값이 또 튑니다!","재실험할까요, 그냥 갈까요?","이 로그는 설명이 안 됩니다!"
  ],
- "Student 11":[
+ "배준호":[
    "교수님, 모델이 좀 이상해요!","결과 비교해봤습니다!","이거 해석이 맞나요?",
    "정확도는 올랐는데 왜 불안하죠?","이 파라미터를 더 건드릴까요?","베이스라인보다 조금 좋아졌습니다!"
  ],
- "Student 22":[
+ "백승민":[
    "교수님, 회의 잡을게요!","이 아이디어 어떤가요?","잠깐 얘기 가능하세요?",
    "이 방향으로 밀어볼까요?","슬라이드 다 만들었습니다!","회의실 비어 있습니다!"
  ],
- "Student 16":[
+ "김민준":[
    "교수님, 이거 검토해주세요!","실험 하나만 더 해볼까요?","수정 방향 여쭤볼게요!",
    "이 결과를 믿어도 될까요?","표 하나만 더 넣을까요?","이제 진짜 끝난 것 같습니다!"
  ],
- "Student 15":[
+ "박도윤":[
    "교수님, 길은 제가 막겠습니다!","이번 결과 확인해주세요!","여기서 기다리고 있겠습니다!",
    "교수님, 이번엔 못 지나갑니다!","실험 결과가 준비됐습니다!","잠깐만 이야기하시죠!",
    "🕸️ 교수님, 이 길은 막혔습니다!","🕸️ 여기 거미줄 하나면 못 지나가시겠죠?","🕸️ 이번엔 거미줄 피해 우회하셔야 합니다!","🕸️ 통로에 거미줄 칩니다!","🕸️ 교수님 동선에 거미줄 좀 쳐두겠습니다!"
  ],
- "Student 01":[
+ "권민재":[
    "교수님, 풋살 전에 이것만요!","잠깐 회의하시죠!","결과 보여드릴게요!",
    "풋살은 나중이고 이것부터 보시죠!","이거 보고 바로 가겠습니다!","교수님, 5분이면 됩니다!",
    "⚽ 풋살 한 판 하고 회의하시죠!","⚽ 교수님, 풋살 멤버 한 명 부족합니다!","⚽ 이거 끝나면 바로 풋살 갑시다!","⚽ 다들 뛰자! 교수님도요!","⚽ 풋살 버프 받고 빨리 끝내죠!"
  ],
- "Student 12":[
+ "류지안":[
    "교수님, 검토 부탁드립니다!","이 부분 의견이 궁금합니다!","회의 자료 준비했습니다!",
    "결론 문장만 봐주세요!","이 그림 순서 괜찮을까요?","이 부분은 교수님 결정이 필요합니다!"
  ],
- "Student 03":[
+ "장하윤":[
    "교수님, 잠깐만 시간 주세요!","서명 하나만 부탁드려요!","이거 결론이 맞을까요?",
    "최종본 거의 다 됐습니다!","이 선택지만 결정해주세요!","교수님 의견대로 수정했습니다!"
  ],
- "Student 13":[
+ "한지민":[
    "교수님, 결과 정리했습니다!","이 수치 한번 봐주세요!","수정 방향 확인 부탁드립니다!",
    "이 결과가 너무 잘 나왔는데요?","비교표 업데이트했습니다!","다음 실험 조건 정해주세요!"
  ],
- "Student 10":[
+ "오세진":[
    "교수님, 실험 끝났습니다!","다음 단계 정해야 합니다!","한번만 확인해주세요!",
    "장비 다시 돌릴까요?","이번 데이터는 꽤 괜찮습니다!","이 조건으로 한 번 더 갈까요?"
  ],
- "Student 05":[
+ "문태경":[
    "교수님... 잠깐만요...","이거 보고 가세요!","오늘은 꼭 잡겠습니다!",
    "교수님 어디 가세요...","아직 이야기 안 끝났습니다...","이번엔 진짜 중요한 겁니다...",
    "🍺 으... 아직 안 취했습니다...","🍺 잠깐만요, 세상이 좀 돕니다...","🦍 교수님... 이제 진짜 갑니다!","🦍 우오오! 이번엔 못 놓칩니다!","🦍 고릴라 모드 켜졌습니다!"
  ],
- "Student 18":[
+ "서은호":[
    "교수님, 리뷰 부탁드립니다!","회의 자료 가져왔습니다!","이 부분 결정해주세요!",
    "이 문단만 확정하면 됩니다!","오늘 안에 방향 잡아야 합니다!","교수님 피드백 기다리고 있습니다!"
  ]
@@ -1035,16 +1035,16 @@ function drawFutsalBalls(){
 }
 function updateDoctorSpecial(st,now){
  if(!st.isDoctor||st.leaving||now<dinnerFreezeUntil)return;
- if(st.face.n==="Student 01"&&now>=st.specialNext){
+ if(st.face.n==="권민재"&&now>=st.specialNext){
    st.specialNext=now+18000+Math.random()*9000;st.specialMsg="⚽ 풋살하자~";st.specialMsgUntil=now+2200;futsalUntil=Math.max(futsalUntil,now+6500);
    kickFutsalBall(st,now);
    toast="⚽ 풋살 이벤트! 축구공 킥 + 다른 학생 속도 1.2배";toastUntil=now+1800;
  }
- if(st.face.n==="Student 15"&&now>=st.specialNext){
+ if(st.face.n==="박도윤"&&now>=st.specialNext){
    st.specialNext=now+17000+Math.random()*9000;st.specialMsg="🕸️ 거미줄 친다!";st.specialMsgUntil=now+2200;spawnBomb(st,now);
    toast="🕸️ 거미줄 이벤트가 발동했습니다";toastUntil=now+1700;
  }
- if(st.face.n==="Student 05"){
+ if(st.face.n==="문태경"){
    if(!st.specialState&&now>=st.specialNext){st.specialState="drunk";st.specialUntil=now+2500;st.specialMsg="으.. 취한다...";st.specialMsgUntil=st.specialUntil;}
    else if(st.specialState==="drunk"&&now>=st.specialUntil){st.specialState="gorilla";st.specialUntil=now+6500;st.specialMsg="🦍 우오오오!";st.specialMsgUntil=st.specialUntil;toast="🦍 고릴라 모드가 발동했습니다!";toastUntil=now+1800;}
    else if(st.specialState==="gorilla"&&now>=st.specialUntil){st.specialState="";st.specialNext=now+18000+Math.random()*9000;st.specialMsg="";st.specialMsgUntil=0;}
@@ -1184,7 +1184,7 @@ function drawJoon(){
  x.strokeStyle="#ffe600";x.lineWidth=10;
  x.beginPath();x.moveTo(-17,-2);x.lineTo(-25-sw*.3,20);x.stroke();
  x.beginPath();x.moveTo(17,-2);x.lineTo(25+sw*.3,20);x.stroke();
- // use Student 07's profile face photo
+ // use 임수빈's profile face photo
  ovalFace(joonFace(),0,-31,17,20);
  // table-tennis paddle
  x.font="25px sans-serif";x.textAlign="center";x.fillText("🏓",26,3);
@@ -1255,8 +1255,8 @@ function background(now){
  x.fillStyle="#397d55";x.fillRect(W*.62-38,H-30,76,22);x.fillStyle="#fff";x.fillText("EXIT ↓",W*.62,H-14);
  x.fillStyle="#397d55";x.fillRect(8,H*.68-11,70,22);x.fillStyle="#fff";x.fillText("← EXIT",43,H*.68+5);
 }
-function getRecords(){try{let a=JSON.parse(localStorage.getItem("EscapeTop10")||"[]");return Array.isArray(a)?a.filter(Number.isFinite).slice(0,10):[]}catch(e){return[]}}
-function saveRecord(sec){let old=getRecords(),best=old.length?old[0]:-1,isNew=sec>best;let a=old.concat(sec).sort((x,y)=>y-x).slice(0,10);try{localStorage.setItem("EscapeTop10",JSON.stringify(a))}catch(e){}return{a,isNew}}
+function getRecords(){try{let a=JSON.parse(localStorage.getItem("professorEscapeTop10")||"[]");return Array.isArray(a)?a.filter(Number.isFinite).slice(0,10):[]}catch(e){return[]}}
+function saveRecord(sec){let old=getRecords(),best=old.length?old[0]:-1,isNew=sec>best;let a=old.concat(sec).sort((x,y)=>y-x).slice(0,10);try{localStorage.setItem("professorEscapeTop10",JSON.stringify(a))}catch(e){}return{a,isNew}}
 function end(st){
  if(!playing)return;playing=false;
  let sec=(performance.now()-t0)/1000,rec=saveRecord(sec);
@@ -1523,8 +1523,8 @@ function loop(now){
    let vx=tx-s.x,vy=ty-s.y,l=Math.hypot(vx,vy)||1;{
      let feastMult=(now<dinnerFreezeUntil||now<s.feastFreezeUntil)?0:((now<dinnerSlowUntil||now<s.feastSlowUntil)?.9:1);
      let crashMult=(now<s.rageCrashUntil?.5:1),teamMult=teamSpeedMult(s);
-     let futsalMult=(now<futsalUntil&&s.face.n!=="Student 01")?1.2:1;
-     let specialMult=(s.face.n==="Student 05"&&s.specialState==="drunk")?.45:((s.face.n==="Student 05"&&s.specialState==="gorilla")?1.5:1);
+     let futsalMult=(now<futsalUntil&&s.face.n!=="권민재")?1.2:1;
+     let specialMult=(s.face.n==="문태경"&&s.specialState==="drunk")?.45:((s.face.n==="문태경"&&s.specialState==="gorilla")?1.5:1);
      let eff=(now<s.freezeUntil?0:s.s*s.speedMult*(raging?1.85:1)*feastMult*crashMult*teamMult*futsalMult*specialMult);
      if(s.leaving&&!atExit){
        let sepX=0,sepY=0;
@@ -1565,7 +1565,7 @@ function loop(now){
      x.restore();
    }
    bubble(s);
-   if(s.face.n==="Student 05"&&s.specialState==="gorilla"){x.font="50px sans-serif";x.textAlign="center";x.fillText("🦍",s.x,s.y+12);x.fillStyle="#111";x.font="800 11px system-ui";x.fillText("Student 05",s.x,s.y+48)}
+   if(s.face.n==="문태경"&&s.specialState==="gorilla"){x.font="50px sans-serif";x.textAlign="center";x.fillText("🦍",s.x,s.y+12);x.fillStyle="#111";x.font="800 11px system-ui";x.fillText("문태경",s.x,s.y+48)}
    else character(s.face.i,s.x,s.y,s.face.n,s.step,false,vx>=0?1:-1);
    if(!s.leaving&&s.chasing&&now>P.inv&&Math.hypot(P.x-s.x,P.y-s.y)<43){loseLife(s,now);if(!playing)break}
   }
@@ -1574,7 +1574,7 @@ function loop(now){
 
  }
  if(now>=hitInvUntil || Math.floor(now/120)%2===0){
-  character(prof,P.x,P.y,"Professor",P.step,true,1);
+  character(prof,P.x,P.y,"교수님",P.step,true,1);
  }
  x.restore();
  if(now<toastUntil){x.font="800 15px system-ui";let tw=Math.min(VW-40,x.measureText(toast).width+30);x.fillStyle="#111e";x.fillRect(VW/2-tw/2,VH-65,tw,38);x.fillStyle="white";x.textAlign="center";x.fillText(toast,VW/2,VH-40)}
