@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ASCL 교수님 피하기 시뮬레이터</title>
+<title>교수님 피하기 시뮬레이터</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#141922;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}
 canvas{display:block;position:fixed;left:0;top:104px;width:100vw;height:calc(100vh - 200px)}
@@ -52,7 +52,7 @@ canvas{display:block;position:fixed;left:0;top:104px;width:100vw;height:calc(100
 #taehunCard h2{margin:0}.taehunLine{font-size:18px;font-weight:900}.taehunGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.taehunGrid button{padding:16px 10px;border:0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #0002;font-weight:800;font-size:16px;cursor:pointer}.taehunGrid button.shopSelected{outline:4px solid #4a9de8;background:#dff0ff;transform:translateY(-1px)}.taehunGrid small{display:block;color:#666;margin-top:4px}
 </style></head>
 <body>
-<div id="hud"><b>🏃 ASCL 교수님 피하기 시뮬레이터</b><br>
+<div id="hud"><b>🏃 교수님 피하기 시뮬레이터</b><br>
 생존 <b id="time">0.0</b>초 · ❤️ 목숨 <b id="lives">3</b> · 실제 추격 <b id="cnt">0</b>명 · 맵 안 <b id="active">0</b>/8명 · 떠난 학생 <b id="gone">0</b>명 · 🚪 복귀대기 <b id="waiting">0</b>명 · 방문 <b id="visited">0</b>/<b id="total">0</b>명
 <div class="skills">
 <span class="skill" id="s1">🚪 문 잠그기 5만원(교수실에서)</span>
@@ -100,7 +100,7 @@ canvas{display:block;position:fixed;left:0;top:104px;width:100vw;height:calc(100
 </div>
 <div id="overlay">
 <div class="card" id="start">
-<h1>📚 ASCL 교수님 피하기 시뮬레이터 · 외부용</h1>
+<h1>📚 교수님 피하기 시뮬레이터 · 외부용</h1>
 <p>외부 공유용: 임의 이름을 사용하고 인물 사진을 불러오지 않습니다.<br>시작 전에 원하는 조작키를 정할 수 있습니다. 버튼을 누른 뒤 새 키를 입력하세요.</p>
 <div class="keySetup">
  <span class="keyLabel">🚪 문 잠그기</span><button class="keyBind" data-bind="door">1</button>
@@ -1255,8 +1255,8 @@ function background(now){
  x.fillStyle="#397d55";x.fillRect(W*.62-38,H-30,76,22);x.fillStyle="#fff";x.fillText("EXIT ↓",W*.62,H-14);
  x.fillStyle="#397d55";x.fillRect(8,H*.68-11,70,22);x.fillStyle="#fff";x.fillText("← EXIT",43,H*.68+5);
 }
-function getRecords(){try{let a=JSON.parse(localStorage.getItem("asclEscapeTop10")||"[]");return Array.isArray(a)?a.filter(Number.isFinite).slice(0,10):[]}catch(e){return[]}}
-function saveRecord(sec){let old=getRecords(),best=old.length?old[0]:-1,isNew=sec>best;let a=old.concat(sec).sort((x,y)=>y-x).slice(0,10);try{localStorage.setItem("asclEscapeTop10",JSON.stringify(a))}catch(e){}return{a,isNew}}
+function getRecords(){try{let a=JSON.parse(localStorage.getItem("EscapeTop10")||"[]");return Array.isArray(a)?a.filter(Number.isFinite).slice(0,10):[]}catch(e){return[]}}
+function saveRecord(sec){let old=getRecords(),best=old.length?old[0]:-1,isNew=sec>best;let a=old.concat(sec).sort((x,y)=>y-x).slice(0,10);try{localStorage.setItem("EscapeTop10",JSON.stringify(a))}catch(e){}return{a,isNew}}
 function end(st){
  if(!playing)return;playing=false;
  let sec=(performance.now()-t0)/1000,rec=saveRecord(sec);
