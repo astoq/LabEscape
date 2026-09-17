@@ -1,0 +1,1599 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASCL 교수님 피하기 시뮬레이터</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#141922;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}
+canvas{display:block;position:fixed;left:0;top:104px;width:100vw;height:calc(100vh - 200px)}
+#hud{position:fixed;z-index:40;left:0;right:0;top:0;height:104px;box-sizing:border-box;background:#10151df7;color:white;padding:8px 14px;border-radius:0;box-shadow:0 3px 12px #0006;overflow:hidden}
+#hud b{font-weight:900}.sub{font-size:11px;color:#cbd1dc;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.skills{display:flex;gap:5px;margin-top:5px;flex-wrap:nowrap}.skill{font-size:11px;padding:4px 7px;border-radius:7px;background:#263141;white-space:nowrap}.ready{background:#315e3b}.cool{opacity:.55}
+#overlay{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;color:white}
+.card{background:#0e131bea;border:1px solid #ffffff38;border-radius:20px;padding:25px 32px;text-align:center;box-shadow:0 20px 70px #0009;max-width:600px}
+.card{pointer-events:auto}.card h1{margin:0 0 8px}.hide{display:none}kbd{background:#fff;color:#111;border-radius:5px;padding:2px 7px;font-weight:900}
+.keySetup{display:grid;grid-template-columns:1fr 110px;gap:7px 12px;align-items:center;margin:14px auto 10px;max-width:390px;text-align:left}
+.keySetup .keyLabel{font-size:14px;font-weight:800}
+.keyBind{border:2px solid #ffffff55;background:#263141;color:#fff;border-radius:9px;padding:7px 10px;font:900 13px system-ui;cursor:pointer;text-align:center}
+.keyBind.listening{background:#8b5e17;border-color:#ffd56a;box-shadow:0 0 0 3px #ffd56a33}
+.keyBind:hover{background:#34445b}
+#bindHint{min-height:20px;font-size:12px;color:#ffd978;font-weight:800;margin-top:4px}
+
+
+
+#effectTimer{position:fixed;z-index:50;top:108px;left:50%;transform:translateX(-50%);max-width:calc(100% - 30px);padding:8px 14px;border-radius:12px;background:rgba(20,24,31,.9);color:#fff;font:800 14px/1.3 system-ui,sans-serif;text-align:center;pointer-events:none;box-shadow:0 2px 10px rgba(0,0,0,.25)}#effectTimer.on{background:rgba(125,45,22,.94)}#resourceDock{position:fixed;z-index:40;left:50%;bottom:10px;transform:translateX(-50%);display:flex;align-items:center;gap:9px;max-width:calc(100vw - 520px);padding:8px 12px;border-radius:13px;background:#10151eee;color:white;box-shadow:0 4px 18px #0007;font:700 14px system-ui;pointer-events:none}
+#resourceDock .dockTitle{opacity:.7;font-size:12px}#resourceDock .dockItem{white-space:nowrap;background:#ffffff14;padding:5px 9px;border-radius:8px}#resourceDock b{font-size:20px}
+#teamPanel{position:fixed;z-index:40;right:14px;bottom:10px;width:250px;background:#10151eee;color:#fff;padding:8px 10px;border-radius:12px;font:700 11px system-ui;box-shadow:0 4px 18px #0007;pointer-events:none}
+.teamGauge{display:grid;grid-template-columns:88px 1fr 34px;gap:6px;align-items:center;margin:5px 0}.teamGauge .bar{height:10px;border-radius:8px;background:#ffffff20;overflow:hidden}.teamGauge .bar i{display:block;height:100%;width:0;background:#e65b4f}.teamGauge span{text-align:right}.teamGauge small{grid-column:1/4;color:#f7d77c;min-height:12px}
+#shopModal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:#0009;color:#111;padding:16px;box-sizing:border-box}
+#shopCard{width:min(520px,94vw);max-height:calc(100vh - 32px);overflow:auto;background:#f7f2dc;border:5px solid #263141;border-radius:20px;padding:20px;box-sizing:border-box;text-align:center;box-shadow:0 24px 80px #000b}
+#shopCard h2{margin:0}.ownerLine{font-size:18px;font-weight:900}.shopHint{font-size:12px;color:#555}.shopGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.shopGrid button{padding:15px 10px;border:0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #0002;font-weight:800;font-size:16px;cursor:pointer}.shopGrid button:hover{background:#fff7b8}.shopGrid small{display:block;color:#555;margin-top:4px;font-size:14px}
+
+#coffeePanel{position:fixed;z-index:40;left:14px;bottom:10px;width:220px;box-sizing:border-box;background:#10151eee;color:white;padding:9px 11px;border-radius:12px;box-shadow:0 4px 18px #0007;font:700 12px system-ui;pointer-events:none}
+#coffeePanel .coffeeHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#coffeePanel .coffeeTrack{height:10px;background:#ffffff25;border-radius:8px;overflow:hidden}
+#coffeePanel .coffeeFill{display:block;height:100%;width:100%;background:#f0c85b;border-radius:8px}
+#shopCard .shopGrid button.shopSelected{outline:4px solid #e5b600;background:#fff3a8;transform:translateY(-1px)}
+#shopCard .keyboardHelp{font-size:12px;font-weight:800;color:#3b4652;margin:8px 0 0}
+@media(max-width:900px){
+ #coffeePanel{left:8px;bottom:8px;width:180px}
+ #teamPanel{right:8px;bottom:8px;width:215px}
+ #resourceDock{bottom:8px;max-width:calc(100vw - 420px);padding:7px 9px}
+}
+@media(max-width:620px){
+ canvas{height:calc(100vh - 224px)}
+ #coffeePanel{left:6px;bottom:58px;width:160px;padding:6px 7px}
+ #teamPanel{right:6px;bottom:58px;width:190px;padding:6px 7px}
+ #resourceDock{bottom:6px;max-width:calc(100vw - 12px);padding:6px 8px}
+ .teamGauge{grid-template-columns:68px 1fr 28px;gap:4px}
+}
+
+#taehunModal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:#0009;color:#111;padding:16px;box-sizing:border-box}
+#taehunCard{width:min(500px,94vw);max-height:calc(100vh - 32px);overflow:auto;background:#e8f4ff;border:5px solid #294866;border-radius:20px;padding:20px;box-sizing:border-box;text-align:center;box-shadow:0 24px 80px #000b}
+#taehunCard h2{margin:0}.taehunLine{font-size:18px;font-weight:900}.taehunGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.taehunGrid button{padding:16px 10px;border:0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #0002;font-weight:800;font-size:16px;cursor:pointer}.taehunGrid button.shopSelected{outline:4px solid #4a9de8;background:#dff0ff;transform:translateY(-1px)}.taehunGrid small{display:block;color:#666;margin-top:4px}
+</style></head>
+<body>
+<div id="hud"><b>🏃 ASCL 교수님 피하기 시뮬레이터</b><br>
+생존 <b id="time">0.0</b>초 · ❤️ 목숨 <b id="lives">3</b> · 실제 추격 <b id="cnt">0</b>명 · 맵 안 <b id="active">0</b>/8명 · 떠난 학생 <b id="gone">0</b>명 · 🚪 복귀대기 <b id="waiting">0</b>명 · 방문 <b id="visited">0</b>/<b id="total">0</b>명
+<div class="skills">
+<span class="skill" id="s1">🚪 문 잠그기 5만원(교수실에서)</span>
+<span class="skill" id="s2">🍖 회식 제안 30만원</span>
+</div><div class="sub">WASD/방향키 이동 · <span id="boostKeyLabel">SHIFT</span> 커피 부스트(게이지 소모/미사용 시 회복) · 실제 축소된 컴팩트 연구동 · 모든 구역이 연결되어 있으며, 포기하고 EXIT로 가는 학생도 도중에 교수님을 다시 발견하면 즉시 퇴장을 취소하고 추격합니다. 완전히 퇴장하면 5초 뒤 재등장합니다. 학생은 포기해도 다시 찾아올 수 있습니다. 바닥의 연구수당을 모으세요. 스킬 비용: 🔒5만원 · 🍖30만원.</div></div>
+<div id="effectTimer" aria-live="polite">⏱ 활성 효과 없음</div>
+<canvas id="c" tabindex="0"></canvas>
+</div>
+<div id="coffeePanel">
+  <div class="coffeeHead"><b>☕ 커피 부스트</b><span id="coffeeTxt">100%</span></div>
+  <div class="coffeeTrack"><i id="coffeeFill" class="coffeeFill"></i></div>
+</div>
+<div id="teamPanel">
+  <div class="teamGauge"><b>🎛️ 제어팀 분노</b><div class="bar"><i id="controlBar"></i></div><span id="controlTxt">0%</span><small id="controlStable"></small></div>
+  <div class="teamGauge"><b>🧠 인지팀 분노</b><div class="bar"><i id="cogBar"></i></div><span id="cogTxt">0%</span><small id="cogStable"></small></div>
+</div>
+<div id="shopModal">
+ <div id="shopCard">
+  <h2>🛒 연구지원 상점</h2><p class="ownerLine">담당자: “오셨어요?”</p>
+  <p class="shopHint">구매하면 해당 팀 분노를 낮추고 안정화 동안 분노 상승속도가 0.2배가 됩니다.</p>
+  <div class="shopGrid">
+   <button data-shop="carsim" onclick="buyShop('carsim')">1 · 🚗 CarSim<br><b>25만원</b><small>제어팀 안정화 (분노 -10)</small></button>
+   <button data-shop="hils" onclick="buyShop('hils')">2 · 🧪 HILS<br><b>50만원</b><small>제어팀 강력 안정화 (분노 -30)</small></button>
+   <button data-shop="gpu" onclick="buyShop('gpu')">3 · 🖥️ GPU<br><b>50만원</b><small>인지팀 강력 안정화 (분노 -30)</small></button>
+   <button data-shop="server" onclick="buyShop('server')">4 · 🗄️ 서버대여<br><b>25만원</b><small>인지팀 안정화 (분노 -10)</small></button>
+  </div>
+  <p class="keyboardHelp">⌨️ 방향키 선택 · Enter 구매 · 숫자열/넘버패드 1~4 즉시 구매</p><p><kbd class="interactKeyHint">E</kbd> 또는 <kbd>ESC</kbd> 닫기</p>
+ </div>
+</div>
+<div id="taehunModal">
+ <div id="taehunCard">
+  <h2>🛒 강화 상점</h2><p class="taehunLine">담당자: “강화하시겠어요?”</p>
+  <div class="taehunGrid">
+   <button id="lifeBuyBtn" data-taehun="life" onclick="buyTaehun('life')">1 · ❤️ 목숨 +1<br><b id="lifePrice">100만원</b><small>구매할 때마다 +50만원</small></button>
+   <button id="speedBuyBtn" data-taehun="speed" onclick="buyTaehun('speed')">2 · 🏃 속도 +0.1배<br><b id="speedPrice">50만원</b><small>구매할 때마다 +25만원</small></button>
+  </div>
+  <p class="keyboardHelp">⌨️ ← → 선택 · Enter 구매 · 숫자열/넘버패드 1~2 즉시 구매</p><p><kbd class="interactKeyHint">E</kbd> 또는 <kbd>ESC</kbd> 닫기</p>
+ </div>
+</div>
+<div id="resourceDock">
+ <span class="dockTitle">🎒 보유 자원</span>
+ <span class="dockItem">❤️ 목숨 <b id="dockLives">3</b>개</span>
+ <span class="dockItem">💰 연구수당 <b id="money">10</b>만원</span>
+ <span class="dockItem">💧 물 <b id="waterCount">0</b>개 <kbd id="waterKey">Q</kbd></span>
+</div>
+<div id="overlay">
+<div class="card" id="start">
+<h1>📚 ASCL 교수님 피하기 시뮬레이터 · 외부용</h1>
+<p>외부 공유용: 임의 이름을 사용하고 인물 사진을 불러오지 않습니다.<br>시작 전에 원하는 조작키를 정할 수 있습니다. 버튼을 누른 뒤 새 키를 입력하세요.</p>
+<div class="keySetup">
+ <span class="keyLabel">🚪 문 잠그기</span><button class="keyBind" data-bind="door">1</button>
+ <span class="keyLabel">🍖 회식 제안</span><button class="keyBind" data-bind="dinner">2</button>
+ <span class="keyLabel">💧 물 사용</span><button class="keyBind" data-bind="water">Q</button>
+ <span class="keyLabel">☕ 커피 부스트</span><button class="keyBind" data-bind="boost">SHIFT</button>
+ <span class="keyLabel">🛒 상점 이용/닫기</span><button class="keyBind" data-bind="interact">E</button>
+</div>
+<div id="bindHint">이동키 WASD/방향키와 SPACE는 지정할 수 없습니다.</div>
+<p><kbd>SPACE</kbd> 시작</p>
+</div>
+<div class="card hide" id="over"><h1>GAME OVER — 업무 시작</h1><p id="why"></p><p id="record"></p><p><kbd>SPACE</kbd> 재도전</p></div>
+</div>
+<script>
+const C=document.querySelector("#c"),x=C.getContext("2d"); const DEFAULT_BINDS={door:"Digit1",dinner:"Digit2",water:"KeyQ",boost:"ShiftLeft",interact:"KeyE"};
+let binds={...DEFAULT_BINDS},bindingTarget=null;
+const BIND_LABEL={door:"문 잠그기",dinner:"회식 제안",water:"물 사용",boost:"커피 부스트",interact:"상점 이용"};
+function eventCode(e){
+ if(e.code==="ShiftRight")return "ShiftLeft";
+ return e.code||"";
+}
+function keyLabel(code){
+ if(/^Key[A-Z]$/.test(code))return code.slice(3);
+ if(/^Digit[0-9]$/.test(code))return code.slice(5);
+ if(/^Numpad[0-9]$/.test(code))return "NUM "+code.slice(6);
+ const map={ShiftLeft:"SHIFT",ControlLeft:"CTRL",AltLeft:"ALT",Tab:"TAB",Enter:"ENTER",Backquote:"`",
+  Minus:"-",Equal:"=",BracketLeft:"[",BracketRight:"]",Backslash:"\\",Semicolon:";",Quote:"'",Comma:",",Period:".",Slash:"/"};
+ return map[code]||code.replace("Arrow","").toUpperCase();
+}
+function bindMatches(e,name){return eventCode(e)===binds[name]}
+function heldBind(name){
+ const c=binds[name];
+ if(c==="ShiftLeft")return !!(keys.shift||keys.shiftleft||keys.shiftright);
+ if(/^Key[A-Z]$/.test(c))return !!keys[c.slice(3).toLowerCase()];
+ if(/^Digit[0-9]$/.test(c))return !!keys[c.slice(5)];
+ return !!keys[c.toLowerCase()];
+}
+function refreshBindUI(){
+ document.querySelectorAll(".keyBind").forEach(b=>{
+   b.textContent=keyLabel(binds[b.dataset.bind]);
+   b.classList.toggle("listening",bindingTarget===b.dataset.bind);
+ });
+ const s1=document.querySelector("#s1"),s2=document.querySelector("#s2");
+ if(s1)s1.dataset.key=keyLabel(binds.door);
+ if(s2)s2.dataset.key=keyLabel(binds.dinner);
+ const waterK=document.querySelector("#waterKey");
+ if(waterK)waterK.textContent=keyLabel(binds.water);
+ const hint=document.querySelector("#boostKeyLabel");
+ if(hint)hint.textContent=keyLabel(binds.boost);
+ document.querySelectorAll(".interactKeyHint").forEach(k=>k.textContent=keyLabel(binds.interact));
+}
+function setBind(name,code){
+ const forbidden=new Set(["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","Escape"]);
+ const hint=document.querySelector("#bindHint");
+ if(forbidden.has(code)){
+   if(hint)hint.textContent="⚠ 이동키 WASD/방향키, SPACE, ESC는 지정할 수 없습니다.";
+   return false;
+ }
+ const dup=Object.entries(binds).find(([k,v])=>k!==name&&v===code);
+ if(dup){
+   if(hint)hint.textContent="⚠ "+keyLabel(code)+" 키는 이미 "+BIND_LABEL[dup[0]]+"에 사용 중입니다.";
+   return false;
+ }
+ binds[name]=code;
+ if(hint)hint.textContent="✅ "+BIND_LABEL[name]+" → "+keyLabel(code);
+ bindingTarget=null;refreshBindUI();return true;
+}
+document.querySelectorAll(".keyBind").forEach(btn=>btn.addEventListener("click",()=>{
+ bindingTarget=btn.dataset.bind;
+ const hint=document.querySelector("#bindHint");
+ if(hint)hint.textContent="⌨ "+BIND_LABEL[bindingTarget]+"에 사용할 키를 누르세요.";
+ refreshBindUI();
+}));
+document.addEventListener("keydown",e=>{
+ if(!bindingTarget)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ if(e.code==="Escape"){bindingTarget=null;refreshBindUI();return}
+ setBind(bindingTarget,eventCode(e));
+},true);
+refreshBindUI();
+
+let flowDist=null,flowCols=0,flowRows=0,flowBuiltAt=0,flowGoalX=0,flowGoalY=0,flowSig=""; let W,H,VW,VH,CAM={x:0,y:0},toast="",toastUntil=0,last=0,playing=false,t0=0,lastSpawn=0,nextSpawnAllowed=0,gone=0,students=[],keys={},coffee=100,spawnedNames=new Set(),returnQueue=[],studentState=new Map(),paused=false,pauseStarted=0,money=0,funds=[],waterItems=[],lifeItems=[],waterCount=0,lastWaterSpawn=0,lastFundSpawn=0,nextLifeSpawn=0,lastRageAt=0,rageStudent=null,rageUntil=0,lives=3,hitInvUntil=0,shopOpen=false,shopSelection=0,taehunOpen=false,taehunSelection=0,lifeBuys=0,speedBuys=0,playerSpeedMult=1,controlRage=0,cogRage=0,controlStableUntil=0,cogStableUntil=0,futsalUntil=0,futsalBalls=[],bombs=[],joon=null,nextJoonAt=0;
+const prof=new Image(); // external version: no photo loaded
+const raw=[["Student 15", ""],["Student 01", ""],["Student 19", ""],["Student 18", ""],["Student 08", ""],["Student 05", ""],["Student 12", ""],["Student 07", ""],["Student 03", ""],["Student 10", ""],["Student 04", ""],["Student 17", ""],["Student 13", ""],["Student 14", ""],["Student 16", ""],["Student 02", ""],["Student 06", ""],["Student 09", ""],["Student 22", ""],["Student 11", ""],["Student 21", ""],["Student 20", ""]];
+const faces=raw.map(([n])=>({n,i:new Image()}));
+const JOON_FACE_NAME="Student 07";
+function joonFace(){let f=faces.find(z=>z.n===JOON_FACE_NAME);return f?f.i:null}
+const JUNIORS=new Set(["Student 04","Student 14","Student 06","Student 09","Student 21","Student 11","Student 22","Student 16"]);
+const DOCTORS=new Set(["Student 15","Student 01","Student 12","Student 03","Student 13","Student 10","Student 05","Student 18"]);
+const CONTROL=new Set(["Student 15","Student 01","Student 12","Student 03","Student 04","Student 14","Student 06","Student 09","Student 21"]);
+const COGNITION=new Set(["Student 11","Student 22","Student 16","Student 13","Student 10","Student 05","Student 18"]);
+function teamOf(name){return CONTROL.has(name)?"control":(COGNITION.has(name)?"cognition":"none")}
+function isDoctorName(name){return DOCTORS.has(name)}
+const PERSONAL_DIALOGUES={
+ "Student 04":[
+   "교수님, 잠깐만요!","이거 확인만 해주세요!","회의 10분이면 됩니다!",
+   "이 결과면 다음 실험 가도 될까요?","교수님 코멘트 한 줄만요!","메일 보냈는데 직접 가져왔습니다!"
+ ],
+ "Student 14":[
+   "교수님, 결과 나왔어요!","이 부분만 봐주세요!","수정본 가져왔습니다!",
+   "그래프가 좀 수상한데요?","이 버전으로 제출해도 될까요?","교수님 의견 듣고 싶어요!"
+ ],
+ "Student 06":[
+   "교수님 어디 계세요?","논문 한 페이지만요!","진짜 금방 끝나요!",
+   "리뷰어 코멘트가 하나 남았어요!","이 문장 표현 괜찮을까요?","이번엔 진짜 마지막 수정입니다!"
+ ],
+ "Student 09":[
+   "교수님, 서명 부탁드립니다!","마감이 오늘이에요!","잠깐 상담 가능하세요?",
+   "이 문서 오늘 꼭 올라가야 해요!","결재 버튼만 눌러주세요!","교수님 30초만 빌릴게요!"
+ ],
+ "Student 21":[
+   "교수님, 실험 로그 봐주세요!","이상한 결과가 나왔어요!","한 번만 확인해주세요!",
+   "센서값이 또 튑니다!","재실험할까요, 그냥 갈까요?","이 로그는 설명이 안 됩니다!"
+ ],
+ "Student 11":[
+   "교수님, 모델이 좀 이상해요!","결과 비교해봤습니다!","이거 해석이 맞나요?",
+   "정확도는 올랐는데 왜 불안하죠?","이 파라미터를 더 건드릴까요?","베이스라인보다 조금 좋아졌습니다!"
+ ],
+ "Student 22":[
+   "교수님, 회의 잡을게요!","이 아이디어 어떤가요?","잠깐 얘기 가능하세요?",
+   "이 방향으로 밀어볼까요?","슬라이드 다 만들었습니다!","회의실 비어 있습니다!"
+ ],
+ "Student 16":[
+   "교수님, 이거 검토해주세요!","실험 하나만 더 해볼까요?","수정 방향 여쭤볼게요!",
+   "이 결과를 믿어도 될까요?","표 하나만 더 넣을까요?","이제 진짜 끝난 것 같습니다!"
+ ],
+ "Student 15":[
+   "교수님, 길은 제가 막겠습니다!","이번 결과 확인해주세요!","여기서 기다리고 있겠습니다!",
+   "교수님, 이번엔 못 지나갑니다!","실험 결과가 준비됐습니다!","잠깐만 이야기하시죠!",
+   "🕸️ 교수님, 이 길은 막혔습니다!","🕸️ 여기 거미줄 하나면 못 지나가시겠죠?","🕸️ 이번엔 거미줄 피해 우회하셔야 합니다!","🕸️ 통로에 거미줄 칩니다!","🕸️ 교수님 동선에 거미줄 좀 쳐두겠습니다!"
+ ],
+ "Student 01":[
+   "교수님, 풋살 전에 이것만요!","잠깐 회의하시죠!","결과 보여드릴게요!",
+   "풋살은 나중이고 이것부터 보시죠!","이거 보고 바로 가겠습니다!","교수님, 5분이면 됩니다!",
+   "⚽ 풋살 한 판 하고 회의하시죠!","⚽ 교수님, 풋살 멤버 한 명 부족합니다!","⚽ 이거 끝나면 바로 풋살 갑시다!","⚽ 다들 뛰자! 교수님도요!","⚽ 풋살 버프 받고 빨리 끝내죠!"
+ ],
+ "Student 12":[
+   "교수님, 검토 부탁드립니다!","이 부분 의견이 궁금합니다!","회의 자료 준비했습니다!",
+   "결론 문장만 봐주세요!","이 그림 순서 괜찮을까요?","이 부분은 교수님 결정이 필요합니다!"
+ ],
+ "Student 03":[
+   "교수님, 잠깐만 시간 주세요!","서명 하나만 부탁드려요!","이거 결론이 맞을까요?",
+   "최종본 거의 다 됐습니다!","이 선택지만 결정해주세요!","교수님 의견대로 수정했습니다!"
+ ],
+ "Student 13":[
+   "교수님, 결과 정리했습니다!","이 수치 한번 봐주세요!","수정 방향 확인 부탁드립니다!",
+   "이 결과가 너무 잘 나왔는데요?","비교표 업데이트했습니다!","다음 실험 조건 정해주세요!"
+ ],
+ "Student 10":[
+   "교수님, 실험 끝났습니다!","다음 단계 정해야 합니다!","한번만 확인해주세요!",
+   "장비 다시 돌릴까요?","이번 데이터는 꽤 괜찮습니다!","이 조건으로 한 번 더 갈까요?"
+ ],
+ "Student 05":[
+   "교수님... 잠깐만요...","이거 보고 가세요!","오늘은 꼭 잡겠습니다!",
+   "교수님 어디 가세요...","아직 이야기 안 끝났습니다...","이번엔 진짜 중요한 겁니다...",
+   "🍺 으... 아직 안 취했습니다...","🍺 잠깐만요, 세상이 좀 돕니다...","🦍 교수님... 이제 진짜 갑니다!","🦍 우오오! 이번엔 못 놓칩니다!","🦍 고릴라 모드 켜졌습니다!"
+ ],
+ "Student 18":[
+   "교수님, 리뷰 부탁드립니다!","회의 자료 가져왔습니다!","이 부분 결정해주세요!",
+   "이 문단만 확정하면 됩니다!","오늘 안에 방향 잡아야 합니다!","교수님 피드백 기다리고 있습니다!"
+ ]
+};
+const TEAM_DIALOGUES={
+ control:[
+   "제어 쪽 결과 한번 봐주세요!","차량 응답이 생각보다 빠릅니다!","제어기 튜닝 방향 확인해주세요!",
+   "HILS 결과가 또 달라졌습니다!","이 게인 그대로 가도 될까요?","실차 전에 한 번만 봐주세요!",
+   "추종 오차가 조금 남았습니다!","제어 로직 수정했습니다!","이번엔 진동이 줄었습니다!",
+   "CarSim 결과랑 실차가 안 맞습니다!","이 조건에서 안정성이 애매합니다!","제어 주기 바꿔볼까요?"
+ ],
+ cognition:[
+   "인지 결과 한번 봐주세요!","검출이 한 프레임씩 밀립니다!","이 데이터셋 더 넣어볼까요?",
+   "GPU 돌린 결과 나왔습니다!","정확도는 올랐는데 지연이 생겼습니다!","이 모델로 실시간 가능할까요?",
+   "센서 융합 결과가 조금 이상합니다!","인지 파이프라인 수정했습니다!","이 장면에서만 자꾸 놓칩니다!",
+   "서버에서 학습 끝났습니다!","이 임계값을 바꿔볼까요?","오탐이 줄긴 했는데 아직 남았습니다!"
+ ]
+};
+function triggerPersonalDialogue(st,now){
+ if(st.leaving||now<st.dialogueNext)return;
+ let personal=PERSONAL_DIALOGUES[st.face.n]||[];
+ let teamLines=TEAM_DIALOGUES[st.team]||[];
+ let lines=(teamLines.length&&Math.random()<0.42)?teamLines:personal;
+ if(!lines.length)lines=personal.length?personal:teamLines;
+ if(!lines.length)return;
+ st.dialogueText=lines[Math.floor(Math.random()*lines.length)];
+ st.dialogueUntil=now+2400;
+ st.dialogueNext=now+4800+Math.random()*5000;
+}
+const agendas=["📄 논문 검토","📅 과제 회의","💳 예산 처리","🧪 실험 결과","✍️ 서명 요청","💬 연구 상담","📊 중간 보고","🚗 실차 실험","📝 수정본 확인","☎️ 긴급 미팅"];
+const P={x:0,y:0,r:25,step:0,inv:0}; const cd={door:0,dinner:0}; let doorUntil=0,dinnerFreezeUntil=0,dinnerSlowUntil=0;
+
+// ── Map geometry: walls, corridors, stairs ─────────────────────────
+function mapRects(){
+ const sx=W/1120, sy=H/760;
+ const R=[
+  // Short wall segments only: every divider has generous door gaps (> 2*character radius).
+  {x:260,y:90,w:16,h:175},{x:260,y:345,w:16,h:185},
+  {x:520,y:90,w:16,h:120},{x:520,y:300,w:16,h:165},
+  {x:790,y:90,w:16,h:180},{x:790,y:355,w:16,h:175},
+  {x:260,y:265,w:125,h:16},{x:465,y:265,w:145,h:16},{x:700,y:265,w:90,h:16},
+  {x:0,y:530,w:170,h:16},{x:260,y:530,w:190,h:16},{x:545,y:530,w:95,h:16},{x:805,y:530,w:180,h:16},
+  {x:930,y:160,w:16,h:120},{x:930,y:365,w:16,h:165}
+ ];
+ return R.map(r=>({x:r.x*sx,y:r.y*sy,w:Math.max(12,r.w*sx),h:Math.max(12,r.h*sy)}));
+}
+function hitRect(cx,cy,r,q){return cx+r>q.x&&cx-r<q.x+q.w&&cy+r>q.y&&cy-r<q.y+q.h}
+function playableBounds(){
+ // Lower edge is a little more forgiving than before.
+ return {left:25,top:25,right:W-25,bottom:H-45};
+}
+function inPlayableArea(x,y,r=22){
+ const b=playableBounds();
+ return x-r>=b.left&&x+r<=b.right&&y-r>=b.top&&y+r<=b.bottom;
+}
+function professorOfficeRect(){
+ const sx=W/1120,sy=H/760;
+ return {x:18*sx,y:82*sy,w:225*sx,h:168*sy};
+}
+function studentRestrictedRects(now=performance.now()){
+ const R=[];
+ if(now<doorUntil)R.push(professorOfficeRect());
+ return R;
+}
+function studentBlockedAt(cx,cy,r=22,now=performance.now()){
+ return studentRestrictedRects(now).some(q=>hitRect(cx,cy,r,q));
+}
+function bombRects(now=performance.now()){return bombs.filter(b=>now<b.until).map(b=>({x:b.x-b.r,y:b.y-b.r,w:b.r*2,h:b.r*2}))}
+function allBlockers(now=performance.now()){return mapRects().concat(bombRects(now))}
+function studentNavBlockers(now=performance.now()){return mapRects()}
+function moveStudentCollide(o,dx,dy,r,now){
+ const restrictions=studentRestrictedRects(now).filter(q=>!hitRect(o.x,o.y,r,q));
+ const blockers=studentNavBlockers(now).concat(restrictions);
+ let nx=o.x+dx,ny=o.y;
+ for(const q of blockers)if(hitRect(nx,ny,r,q)){nx=o.x;break}
+ o.x=nx;ny=o.y+dy;
+ for(const q of blockers)if(hitRect(o.x,ny,r,q)){ny=o.y;break}
+ o.y=ny;
+}
+function moveCollide(o,dx,dy,r){
+ let nx=o.x+dx, ny=o.y, blockers=allBlockers();
+ for(const q of blockers)if(hitRect(nx,ny,r,q)){nx=o.x;break}
+ o.x=nx; ny=o.y+dy;
+ for(const q of blockers)if(hitRect(o.x,ny,r,q)){ny=o.y;break}
+ o.y=ny;
+}
+function drawMap(){
+ // walls with depth
+ for(const q of mapRects()){
+   x.fillStyle="#8d8f91";x.fillRect(q.x+5,q.y+5,q.w,q.h);
+   x.fillStyle="#f2f0e9";x.fillRect(q.x,q.y,q.w,q.h);
+   x.strokeStyle="#6d7074";x.lineWidth=2;x.strokeRect(q.x,q.y,q.w,q.h);
+ }
+}
+
+function resize(){
+ const r=C.getBoundingClientRect();
+ C.width=VW=Math.max(1,Math.floor(r.width));
+ C.height=VH=Math.max(1,Math.floor(r.height));
+ W=Math.max(1120,VW); H=Math.max(760,VH); flowDist=null;
+ if(!P.x){P.x=W*.43;P.y=H*.43}
+} addEventListener("resize",resize);resize();
+function numberHotkey(e){
+ const code=e.code||"";
+ if(/^Digit[1-9]$/.test(code))return Number(code.slice(5));
+ if(/^Numpad[1-9]$/.test(code))return Number(code.slice(6));
+ if(/^[1-9]$/.test(e.key||""))return Number(e.key);
+ // Numpad with NumLock off can report navigation keys, but `code` remains NumpadN.
+ const k=e.keyCode||e.which||0;
+ if(k>=49&&k<=57)return k-48;      // top number row
+ if(k>=97&&k<=105)return k-96;     // numpad 1..9
+ return 0;
+}
+document.addEventListener("keydown",e=>{
+ if(!shopOpen&&!taehunOpen)return;
+ const num=numberHotkey(e);
+
+ if(shopOpen){
+   let handled=true;
+   if(num>=1&&num<=4){
+     shopSelection=num-1;
+     updateShopSelection();
+     buyShop(SHOP_KEYS[shopSelection]);
+   }
+   else if(e.key==="ArrowLeft")moveShopSelection(-1,0);
+   else if(e.key==="ArrowRight")moveShopSelection(1,0);
+   else if(e.key==="ArrowUp")moveShopSelection(0,-1);
+   else if(e.key==="ArrowDown")moveShopSelection(0,1);
+   else if(e.key==="Enter"||e.code==="NumpadEnter")buyShop(SHOP_KEYS[shopSelection]);
+   else if(bindMatches(e,"interact")||e.key==="Escape")closeShop();
+   else handled=false;
+   if(handled){e.preventDefault();e.stopImmediatePropagation()}
+   return;
+ }
+
+ if(taehunOpen){
+   let handled=true;
+   if(num>=1&&num<=2){
+     taehunSelection=num-1;
+     updateTaehunSelection();
+     buyTaehun(TAEHUN_KEYS[taehunSelection]);
+   }
+   else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){taehunSelection=(taehunSelection+1)%2;updateTaehunSelection()}
+   else if(e.key==="ArrowRight"||e.key==="ArrowDown"){taehunSelection=(taehunSelection+1)%2;updateTaehunSelection()}
+   else if(e.key==="Enter"||e.code==="NumpadEnter")buyTaehun(TAEHUN_KEYS[taehunSelection]);
+   else if(bindMatches(e,"interact")||e.key==="Escape")closeTaehunShop();
+   else handled=false;
+   if(handled){e.preventDefault();e.stopImmediatePropagation()}
+ }
+},true);
+
+addEventListener("keydown",e=>{
+ keys[e.key.toLowerCase()]=1;
+ if(e.code==="Space"&&!playing&&!bindingTarget){e.preventDefault();reset()}
+ // Shop input is handled in capture phase above.
+ if(shopOpen||taehunOpen)return;
+ if(playing&&!paused){
+   if(bindMatches(e,"door"))skillDoor();
+   if(bindMatches(e,"dinner"))skillDinner();
+   if(bindMatches(e,"water"))useWater();
+   if(bindMatches(e,"interact"))tryOpenShop();
+ }
+});
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=0);
+addEventListener("blur",()=>{keys={}});
+function reset(){students=[];spawnedNames=new Set();returnQueue=[];studentState=new Map();funds=[];waterItems=[];lifeItems=[];waterCount=0;lastWaterSpawn=performance.now();money=10;lastFundSpawn=0;nextLifeSpawn=performance.now()+18000+Math.random()*14000;lastRageAt=performance.now();rageStudent=null;rageUntil=0;paused=false;shopOpen=false;shopSelection=0;taehunOpen=false;taehunSelection=0;lifeBuys=0;speedBuys=0;playerSpeedMult=1;gone=0;coffee=100;lives=3;hitInvUntil=0;controlRage=0;cogRage=0;controlStableUntil=0;cogStableUntil=0;futsalUntil=0;futsalBalls=[];bombs=[];joon=null;nextJoonAt=performance.now()+18000+Math.random()*12000;P.x=W*.43;P.y=H*.43;P.inv=0;cd.door=cd.dinner=0;doorUntil=dinnerFreezeUntil=dinnerSlowUntil=0;playing=true;t0=performance.now();lastSpawn=0;nextSpawnAllowed=performance.now()+500;flowDist=null;flowBuiltAt=0;flowSig="";start.classList.add("hide");over.classList.add("hide");document.querySelector("#shopModal").style.display="none";document.querySelector("#taehunModal").style.display="none"}
+function near(a,b,d=95){return Math.hypot(P.x-a,P.y-b)<=d}
+function scatterStudents(now,duration,reason){
+ for(const s of students){
+  if(s.leaving||s.isDoctor)continue;
+  s.chasing=false;
+  s.distractedUntil=now+duration*(0.65+Math.random()*.5);
+  let ang=Math.random()*Math.PI*2,dist=260+Math.random()*520;
+  s.wanderX=Math.max(45,Math.min(W-45,s.x+Math.cos(ang)*dist));
+  s.wanderY=Math.max(110,Math.min(H-55,s.y+Math.sin(ang)*dist));
+  s.leaveReason=reason;
+ }
+}
+function skillDoor(){let n=performance.now();if(n<cd.door)return;if(!near(105*W/1120,150*H/760,82)){toast="🚪 교수실 문 앞에서만 사용할 수 있습니다.";toastUntil=n+1800;return}if(money<5){toast="💸 문 잠그기에는 연구수당 5만원이 필요합니다";toastUntil=n+1800;return}
+ money-=5;cd.door=n+18000;doorUntil=n+5000;P.inv=n+5000;flowDist=null;
+ const room=professorOfficeRect(),sx=W/1120,sy=H/760;
+ for(const st of students){
+   if(st.isDoctor)continue;
+   // Students already in the office WALK out toward the south corridor.
+   // No coordinate jump/teleport is performed.
+   if(hitRect(st.x,st.y,st.r,room)){
+     st.doorEvacuating=true;
+     st.doorExitX=105*sx;
+     st.doorExitY=300*sy;
+     st.chasing=false;
+     st.distractedUntil=n+5000;
+     st.leaveReason=["문이 잠겼네,, 나중에 와야겠다","이따 와야지..","카톡 보내야겠다"][Math.floor(Math.random()*3)];
+     st.path=[];st.pathAt=0;st.stuck=0;
+   }else{
+     st.chasing=false;
+     st.distractedUntil=n+5000;
+     st.leaveReason=["문이 잠겼네,, 나중에 와야겠다","이따 와야지..","카톡 보내야겠다"][Math.floor(Math.random()*3)];
+     st.path=[];st.pathAt=0;st.stuck=0;
+     chooseWander(st,n);
+   }
+ }
+ toast="🔒 문 잠그기 -5만원";toastUntil=n+1200;
+}
+function spawn(now,returnFace=null){
+ // Hard cap: there are 22 unique students and the same identity may never exist twice at once.
+ if(students.length>=8)return false;
+ if(returnFace&&students.some(st=>st.face&&st.face.n===returnFace.n))return false;
+ // Never create a student overlapping a wall. Search nearby for a safe walkable point.
+ const safeSpawn=(px,py)=>{
+   const ok=(xx,yy)=>inPlayableArea(xx,yy,25)&&!mapRects().some(q=>hitRect(xx,yy,25,q));
+   if(ok(px,py))return [px,py];
+   for(let rad=30;rad<=220;rad+=20)for(let k=0;k<24;k++){
+     let ang=k/24*Math.PI*2,xx=px+Math.cos(ang)*rad,yy=py+Math.sin(ang)*rad;
+     if(ok(xx,yy))return [xx,yy];
+   }
+   return null;
+ };
+
+ // Students must never suddenly enter from an exit beside the professor.
+ // Build all four real entry points, discard any too close to the professor,
+ // then randomly use one of the remaining exits.
+ const entryBases=[
+   [W/2,125],
+   [W-125,H*.48],
+   [W*.62,H-125],
+   [125,H*.68]
+ ];
+ const MIN_ENTRY_DIST=340;
+ let entryCandidates=[];
+ for(const base of entryBases){
+   const pt=safeSpawn(base[0],base[1]);
+   if(!pt)continue;
+   const d=Math.hypot(P.x-pt[0],P.y-pt[1]);
+   if(d>=MIN_ENTRY_DIST)entryCandidates.push({pt,d});
+ }
+ // If the professor is positioned so that every entrance is unsafe, do not pop a
+ // student into view. The normal spawn/return logic will simply retry later.
+ if(!entryCandidates.length)return false;
+ let picked=entryCandidates[Math.floor(Math.random()*entryCandidates.length)];
+ let sx=picked.pt[0],sy=picked.pt[1];
+ let f,a;
+ if(returnFace){f=returnFace;a=agendas[Math.floor(Math.random()*agendas.length)];}
+ else{
+   let gameSec=(now-t0)/1000;
+   let allowed=gameSec<25?JUNIORS:new Set([...JUNIORS,...DOCTORS]);
+   let available=faces.filter(f=>allowed.has(f.n)&&!spawnedNames.has(f.n));
+   if(!available.length)return false;
+   f=available[Math.floor(Math.random()*available.length)];spawnedNames.add(f.n);a=agendas[Math.floor(Math.random()*agendas.length)];
+ }
+ let persistent=studentState.get(f.n)||{speedMult:1};
+ studentState.set(f.n,persistent);
+ let doc=isDoctorName(f.n),team=teamOf(f.n),baseSpeed=doc?204.25:193.5; // professor 215 = 100, master 90, doctorate 95
+ students.push({x:sx,y:sy,r:22,s:baseSpeed,face:f,agenda:a,step:Math.random()*6,life:9000+Math.random()*11000,leaving:false,tx:0,ty:0,leaveReason:"",speedMult:persistent.speedMult,freezeUntil:0,returnDelay:5000,kakaoSent:false,distractedUntil:0,wanderX:0,wanderY:0,path:[],pathAt:0,pathTargetX:0,pathTargetY:0,chasing:false,wanderAt:0,vision:300+Math.random()*140,lastSeen:0,exitPoint:null,stuck:0,searchSince:now,spawnGraceUntil:returnFace?now+900:0,rageCrashUntil:0,noRageUntil:0,feastFreezeUntil:0,feastSlowUntil:0,feastMsgUntil:0,isDoctor:doc,team,specialNext:now+9000+Math.random()*9000,specialState:"",specialUntil:0,specialMsg:"",specialMsgUntil:0,dialogueText:"",dialogueUntil:0,dialogueNext:now+1800+Math.random()*3500,doorEvacuating:false,doorExitX:0,doorExitY:0}); return true;
+}
+
+// ── Student navigation: coarse A* grid prevents wall-sticking ──────
+const NAV=46; let pathPlansThisFrame=0; const MAX_PATH_PLANS_PER_FRAME=2;
+
+// Shared professor flow-field: one lightweight BFS is reused by every chasing student.
+// This avoids running a separate A* search for each chaser.
+
+function flowSignature(){
+ return [Math.floor(doorUntil/250)].join(":");
+}
+function rebuildProfessorFlow(now){
+ let cols=Math.ceil(W/NAV),rows=Math.ceil(H/NAV);
+ let gc=nearestFreeCell(
+   Math.max(0,Math.min(cols-1,Math.floor(P.x/NAV))),
+   Math.max(0,Math.min(rows-1,Math.floor(P.y/NAV)))
+ );
+ let goal=gc[1]*cols+gc[0],dist=new Int16Array(cols*rows);dist.fill(-1);
+ let q=new Int32Array(cols*rows),head=0,tail=0;
+ dist[goal]=0;q[tail++]=goal;
+ const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+ while(head<tail){
+   let cur=q[head++],cx=cur%cols,cy=Math.floor(cur/cols),nd=dist[cur]+1;
+   for(const [dx,dy] of dirs){
+     let nx=cx+dx,ny=cy+dy;
+     if(nx<0||ny<0||nx>=cols||ny>=rows||blockedCell(nx,ny)||dist[ny*cols+nx]>=0)continue;
+     if(dx&&dy&&(blockedCell(cx+dx,cy)||blockedCell(cx,cy+dy)))continue;
+     let id=ny*cols+nx;dist[id]=nd;q[tail++]=id;
+   }
+ }
+ flowDist=dist;flowCols=cols;flowRows=rows;flowBuiltAt=now;flowGoalX=P.x;flowGoalY=P.y;flowSig=flowSignature();
+}
+function ensureProfessorFlow(now){
+ let moved=Math.hypot(P.x-flowGoalX,P.y-flowGoalY)>34;
+ if(!flowDist||now-flowBuiltAt>300||moved||flowSig!==flowSignature())rebuildProfessorFlow(now);
+}
+function flowStepClear(st,tx,ty,now){
+ const r=st.r||22;
+ let d=Math.hypot(tx-st.x,ty-st.y),steps=Math.max(2,Math.ceil(d/14));
+ const restrictions=studentRestrictedRects(now).filter(q=>!hitRect(st.x,st.y,r,q));
+ const blockers=studentNavBlockers(now).concat(restrictions);
+ for(let i=1;i<=steps;i++){
+   let t=i/steps,px=st.x+(tx-st.x)*t,py=st.y+(ty-st.y)*t;
+   for(const q of blockers)if(hitRect(px,py,r,q))return false;
+ }
+ return true;
+}
+function flowTargetFor(st,now){
+ ensureProfessorFlow(now);
+ if(!flowDist)return null;
+ let cx=Math.max(0,Math.min(flowCols-1,Math.floor(st.x/NAV)));
+ let cy=Math.max(0,Math.min(flowRows-1,Math.floor(st.y/NAV)));
+ let best=null,bestD=32767;
+ const pb=playableBounds(),r=st.r||22;
+
+ for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+   if(!dx&&!dy)continue;
+   let nx=cx+dx,ny=cy+dy;
+   if(nx<0||ny<0||nx>=flowCols||ny>=flowRows||blockedCell(nx,ny))continue;
+   if(dx&&dy&&(blockedCell(cx+dx,cy)||blockedCell(cx,cy+dy)))continue;
+
+   let d=flowDist[ny*flowCols+nx];
+   if(d<0||d>=bestD)continue;
+
+   // Convert the abstract grid center to a point the NPC can physically reach.
+   // In particular, top-row y=23 becomes y=top+r (~47), so NPCs no longer
+   // keep head-butting the upper boundary/wall edge.
+   let tx=nx*NAV+NAV/2,ty=ny*NAV+NAV/2;
+   tx=Math.max(pb.left+r,Math.min(pb.right-r,tx));
+   ty=Math.max(pb.top+r,Math.min(pb.bottom-r,ty));
+
+   // Reject a coarse-grid diagonal if the student's body would clip a wall
+   // on the short step to that waypoint.
+   if(!flowStepClear(st,tx,ty,now))continue;
+
+   bestD=d;best={x:tx,y:ty};
+ }
+ return best;
+}
+function blockedCell(cx,cy,r=27){
+ let px=cx*NAV+NAV/2,py=cy*NAV+NAV/2;
+ if(px<20||py<20||px>W-48||py>H-78)return true;
+ for(const q of studentNavBlockers())if(hitRect(px,py,r,q))return true;
+ for(const q of studentRestrictedRects())if(hitRect(px,py,r,q))return true;
+ return false;
+}
+function nearestFreeCell(cx,cy){
+ if(!blockedCell(cx,cy))return [cx,cy];
+ for(let rad=1;rad<=5;rad++)for(let dy=-rad;dy<=rad;dy++)for(let dx=-rad;dx<=rad;dx++){
+   if(Math.abs(dx)!==rad&&Math.abs(dy)!==rad)continue;
+   let nx=cx+dx,ny=cy+dy;if(nx>=0&&ny>=0&&!blockedCell(nx,ny))return [nx,ny];
+ }
+ return [cx,cy];
+}
+function astar(sx,sy,gx,gy){
+ let cols=Math.ceil(W/NAV),rows=Math.ceil(H/NAV);
+ let a=nearestFreeCell(Math.max(0,Math.min(cols-1,Math.floor(sx/NAV))),Math.max(0,Math.min(rows-1,Math.floor(sy/NAV))));
+ let b=nearestFreeCell(Math.max(0,Math.min(cols-1,Math.floor(gx/NAV))),Math.max(0,Math.min(rows-1,Math.floor(gy/NAV))));
+ let start=a[1]*cols+a[0],goal=b[1]*cols+b[0],open=[start],came=new Map(),g=new Map([[start,0]]),fs=new Map([[start,Math.hypot(a[0]-b[0],a[1]-b[1])]]);
+ let openSet=new Set(open),iters=0;
+ const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+ while(open.length&&iters++<5000){
+   let bi=0,bf=fs.get(open[0])??1e9;for(let i=1;i<open.length;i++){let f=fs.get(open[i])??1e9;if(f<bf){bf=f;bi=i}}
+   let cur=open.splice(bi,1)[0];openSet.delete(cur);if(cur===goal){
+     let ids=[cur];while(came.has(cur)){cur=came.get(cur);ids.push(cur)}ids.reverse();
+     return ids.slice(1).map(id=>({x:(id%cols)*NAV+NAV/2,y:Math.floor(id/cols)*NAV+NAV/2}));
+   }
+   let cx=cur%cols,cy=Math.floor(cur/cols);
+   for(const [dx,dy] of dirs){let nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=cols||ny>=rows||blockedCell(nx,ny))continue;
+     // diagonal corner-cut prevention
+     if(dx&&dy&&(blockedCell(cx+dx,cy)||blockedCell(cx,cy+dy)))continue;
+     let nid=ny*cols+nx,ng=(g.get(cur)??1e9)+(dx&&dy?1.414:1);
+     if(ng<(g.get(nid)??1e9)){came.set(nid,cur);g.set(nid,ng);fs.set(nid,ng+Math.hypot(nx-b[0],ny-b[1]));if(!openSet.has(nid)){open.push(nid);openSet.add(nid)}}
+   }
+ }
+ return [];
+}
+
+// Pick a reachable approach point on the SAME accessible side of nearby walls as the professor.
+// This fixes all "professor stands close to a wall/partition and visible students cannot reach him" spots.
+function chaseApproachPath(st){
+ if(directStudentPathClear(st,P.x,P.y))return {path:[],target:{x:P.x,y:P.y},direct:true};
+ const candidates=[];
+ const add=(px,py)=>{
+   if(px<32||py<20||px>W-32||py>H-32)return;
+   if(studentNavBlockers().some(q=>hitRect(px,py,25,q)))return;
+   if(studentBlockedAt(px,py,25))return;
+   for(const q of studentNavBlockers())if(segmentHitsRect(px,py,P.x,P.y,q))return;
+   let pd=Math.hypot(px-P.x,py-P.y),sd=Math.hypot(px-st.x,py-st.y);
+   candidates.push({x:px,y:py,pd,sd,score:sd+pd*.45});
+ };
+ for(const rad of [42,72,108])for(let k=0;k<8;k++){
+   let a=k/8*Math.PI*2;add(P.x+Math.cos(a)*rad,P.y+Math.sin(a)*rad);
+ }
+ candidates.sort((a,b)=>a.score-b.score);
+ let best=null,bestScore=1e9,tries=0;
+ for(const c of candidates){
+   if(tries++>=5)break;
+   let path=astar(st.x,st.y,c.x,c.y),near=Math.hypot(st.x-c.x,st.y-c.y)<55;
+   if(!path.length&&!near)continue;
+   let score=c.pd*.55+path.length*NAV;
+   if(score<bestScore){bestScore=score;best={path,target:c}}
+ }
+ return best;
+}
+
+function directStudentPathClear(st,tx,ty){
+ // For the last few pixels, verify the student's body can move toward the professor
+ // without crossing a wall. Sampling catches the narrow wall-edge cases that LOS alone misses.
+ let d=Math.hypot(tx-st.x,ty-st.y),steps=Math.max(1,Math.ceil(d/12));
+ for(let i=1;i<=steps;i++){
+   let t=i/steps,px=st.x+(tx-st.x)*t,py=st.y+(ty-st.y)*t;
+   if(allBlockers().some(q=>hitRect(px,py,st.r||22,q)))return false;
+   if(studentBlockedAt(px,py,st.r||22))return false;
+ }
+ return true;
+}
+
+function navTarget(st,goalX,goalY,now){
+ if(!st.repathJitter)st.repathJitter=Math.random()*260;
+ let movedGoal=Math.hypot(goalX-st.pathTargetX,goalY-st.pathTargetY)>88;
+ let chasingProfessor=st.chasing&&!st.leaving&&Math.hypot(goalX-P.x,goalY-P.y)<3;
+ let due=now-st.pathAt>(950+st.repathJitter);
+
+ // Direct clear line is cheapest and smoothest.
+ if(chasingProfessor&&directStudentPathClear(st,P.x,P.y)){
+   st.path=[];st.approachX=P.x;st.approachY=P.y;
+   st.pathTargetX=P.x;st.pathTargetY=P.y;
+   return {x:P.x,y:P.y};
+ }
+
+ // When chasing, use the ONE shared BFS flow-field for all students.
+ if(chasingProfessor){
+   let ft=flowTargetFor(st,now);
+   if(ft){
+     st.path=[];st.approachX=ft.x;st.approachY=ft.y;
+     st.pathAt=now;st.pathTargetX=P.x;st.pathTargetY=P.y;
+     return ft;
+   }
+   // rare fallback if dynamic blockers make the flow temporarily unavailable
+   if((due||movedGoal)&&pathPlansThisFrame<MAX_PATH_PLANS_PER_FRAME){
+     pathPlansThisFrame++;
+     let ap=chaseApproachPath(st);
+     if(ap&&ap.path.length){st.path=ap.path;st.approachX=ap.target.x;st.approachY=ap.target.y}
+     st.pathAt=now;st.pathTargetX=P.x;st.pathTargetY=P.y;
+   }
+ }else if((due||movedGoal||!st.path.length)&&pathPlansThisFrame<MAX_PATH_PLANS_PER_FRAME){
+   pathPlansThisFrame++;
+   st.path=astar(st.x,st.y,goalX,goalY);
+   st.approachX=goalX;st.approachY=goalY;
+   st.pathAt=now;st.pathTargetX=goalX;st.pathTargetY=goalY;
+ }
+
+ while(st.path.length&&Math.hypot(st.x-st.path[0].x,st.y-st.path[0].y)<(st.path[0].y<30?34:30))st.path.shift();
+ while(st.path.length&&studentBlockedAt(st.path[0].x,st.path[0].y,24,now))st.path.shift();
+ if(st.path.length)return st.path[0];
+
+ if(chasingProfessor){
+   let ft=flowTargetFor(st,now);
+   if(ft)return ft;
+   if(Number.isFinite(st.approachX))return {x:st.approachX,y:st.approachY};
+ }
+
+ if(pathPlansThisFrame>=MAX_PATH_PLANS_PER_FRAME)return {x:st.x,y:st.y};
+
+ if(Math.hypot(st.x-goalX,st.y-goalY)>70&&!st.leaving){
+   chooseWander(st,now);
+   pathPlansThisFrame++;
+   st.path=astar(st.x,st.y,st.wanderX,st.wanderY);
+   if(st.path.length)return st.path[0];
+ }
+ return {x:goalX,y:goalY};
+}
+function rescueStudentFromWall(st,now){
+ // Find a nearby A* cell whose center has enough clearance for the student's full body.
+ let cols=Math.ceil(W/NAV),rows=Math.ceil(H/NAV);
+ let cx=Math.max(0,Math.min(cols-1,Math.floor(st.x/NAV)));
+ let cy=Math.max(0,Math.min(rows-1,Math.floor(st.y/NAV)));
+ let best=null;
+ for(let rad=0;rad<=4&&!best;rad++){
+   for(let dy=-rad;dy<=rad;dy++)for(let dx=-rad;dx<=rad;dx++){
+     if(rad&&Math.abs(dx)!==rad&&Math.abs(dy)!==rad)continue;
+     let nx=cx+dx,ny=cy+dy;
+     if(nx<0||ny<0||nx>=cols||ny>=rows||blockedCell(nx,ny,28))continue;
+     let px=nx*NAV+NAV/2,py=ny*NAV+NAV/2;
+     if(studentBlockedAt(px,py,24,now))continue;
+     best={x:px,y:py};break;
+   }
+ }
+ if(best){st.x=best.x;st.y=best.y}
+ st.path=[];st.pathAt=0;st.stuck=0;
+ if(st.leaving)chooseExit(st);
+ else if(st.chasing){
+   let ap=chaseApproachPath(st);
+   st.path=ap?ap.path:[];
+   if(ap){st.approachX=ap.target.x;st.approachY=ap.target.y}
+   st.pathAt=now;st.pathTargetX=P.x;st.pathTargetY=P.y;
+ }else chooseWander(st,now);
+}
+
+
+function segmentHitsRect(x1,y1,x2,y2,q){
+ // sample along sight line; robust enough for the game's axis-aligned walls
+ let d=Math.hypot(x2-x1,y2-y1),steps=Math.max(2,Math.ceil(d/18));
+ for(let i=1;i<steps;i++){let t=i/steps,px=x1+(x2-x1)*t,py=y1+(y2-y1)*t;if(px>q.x&&px<q.x+q.w&&py>q.y&&py<q.y+q.h)return true}
+ return false;
+}
+function canSeeProfessor(st){
+ if(performance.now()<hitInvUntil)return false;
+ let d=Math.hypot(P.x-st.x,P.y-st.y);if(d>st.vision)return false;
+ for(const q of mapRects())if(segmentHitsRect(st.x,st.y,P.x,P.y,q))return false;
+ return true;
+}
+
+const EXIT_POINTS=[
+ {x:W/2,y:62,edge:"top"},
+ {x:W-62,y:H*.48,edge:"right"},
+ {x:W*.62,y:H-62,edge:"bottom"},
+ {x:92,y:H*.68,edge:"left"}
+];
+function chooseExit(st){
+ let candidates=EXIT_POINTS.map(e=>({e,d:Math.hypot(st.x-e.x,st.y-e.y)+Math.max(0,220-Math.hypot(P.x-e.x,P.y-e.y))*.8})).sort((a,b)=>a.d-b.d);
+ // Prefer nearest exit that actually has a navigable path.
+ for(const c of candidates){let p=astar(st.x,st.y,c.e.x,c.e.y);if(p.length){st.exitPoint=c.e;st.tx=c.e.x;st.ty=c.e.y;st.path=[];return}}
+ st.exitPoint=candidates[0].e;st.tx=st.exitPoint.x;st.ty=st.exitPoint.y;st.path=[];
+}
+function chooseWander(st,now){
+ let tries=0;
+ do{let ang=Math.random()*Math.PI*2,dist=180+Math.random()*420;st.wanderX=Math.max(45,Math.min(W-45,st.x+Math.cos(ang)*dist));st.wanderY=Math.max(48,Math.min(H-82,st.y+Math.sin(ang)*dist));tries++}
+ while(tries<12&&(studentBlockedAt(st.wanderX,st.wanderY,26,now)||astar(st.x,st.y,st.wanderX,st.wanderY).length===0));
+ if(studentBlockedAt(st.wanderX,st.wanderY,26,now)){
+   let c=nearestFreeCell(Math.floor(st.x/NAV),Math.floor(st.y/NAV));
+   st.wanderX=c[0]*NAV+NAV/2;st.wanderY=c[1]*NAV+NAV/2;
+ }
+ st.wanderAt=now;st.path=[];
+}
+
+function ovalFace(img,cx,cy,rx,ry){
+ x.save();
+ x.fillStyle="#d8b18c";x.beginPath();x.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);x.fill();
+ x.fillStyle="#2b2b2b";
+ x.beginPath();x.arc(cx-rx*.35,cy-ry*.15,1.7,0,Math.PI*2);x.arc(cx+rx*.35,cy-ry*.15,1.7,0,Math.PI*2);x.fill();
+ x.strokeStyle="#2b2b2b";x.lineWidth=1.5;
+ x.beginPath();x.arc(cx,cy+ry*.12,rx*.28,0.15,Math.PI-0.15);x.stroke();
+ x.beginPath();x.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);x.stroke();
+ x.restore();
+}
+function character(img,cx,cy,name,step,professor=false,dir=1){
+ let bob=Math.sin(step*8)*2,sw=Math.sin(step*8)*10;
+ x.save();x.translate(cx,cy+bob); if(dir<0)x.scale(-1,1);
+ // shadow
+ x.fillStyle="#0002";x.beginPath();x.ellipse(0,37,25,8,0,0,7);x.fill();
+ // legs - animated walk
+ x.strokeStyle=professor?"#252d39":"#303640";x.lineWidth=9;x.lineCap="round";
+ x.beginPath();x.moveTo(-7,19);x.lineTo(-9+sw*.55,42);x.stroke();x.beginPath();x.moveTo(7,19);x.lineTo(9-sw*.55,42);x.stroke();
+ // shoes
+ x.strokeStyle="#171717";x.lineWidth=6;x.beginPath();x.moveTo(-10+sw*.55,43);x.lineTo(-2+sw*.55,43);x.stroke();x.beginPath();x.moveTo(8-sw*.55,43);x.lineTo(16-sw*.55,43);x.stroke();
+ // torso
+ x.fillStyle=professor?"#34495e":"#4d6785";x.beginPath();x.roundRect(-19,-10,38,34,10);x.fill();
+ // shirt / tie
+ x.fillStyle="#f3f4f6";x.beginPath();x.moveTo(-7,-10);x.lineTo(0,8);x.lineTo(7,-10);x.fill();
+ if(professor){x.fillStyle="#8d2334";x.beginPath();x.moveTo(-2,-5);x.lineTo(2,-5);x.lineTo(4,11);x.lineTo(0,16);x.lineTo(-4,11);x.fill()}
+ // arms swing
+ x.strokeStyle=professor?"#34495e":"#4d6785";x.lineWidth=9;
+ x.beginPath();x.moveTo(-16,-2);x.lineTo(-23-sw*.35,19);x.stroke();x.beginPath();x.moveTo(16,-2);x.lineTo(23+sw*.35,19);x.stroke();
+ // neck + cutout face (oval crop = simple background removal effect)
+ x.fillStyle="#d5aa84";x.fillRect(-5,-17,10,9);ovalFace(img,0,-31,17,20);
+ x.restore();
+ // label
+ x.font="700 11px system-ui";let m=x.measureText(name).width;x.fillStyle="#111d";x.fillRect(cx-m/2-5,cy+52,m+10,17);x.fillStyle="white";x.textAlign="center";x.fillText(name,cx,cy+64)
+}
+function bubble(s){
+ let bn=performance.now();
+ let txt=(s.specialMsg&&bn<s.specialMsgUntil)?s.specialMsg:
+   ((s.dialogueText&&bn<s.dialogueUntil)?s.dialogueText:
+   (((bn<dinnerFreezeUntil||bn<s.feastMsgUntil))?"🍖 맛있다.. 교수님 최고":
+   (bn<s.rageCrashUntil?"뭐하고 있었더라?":
+   (s.leaving?s.leaveReason:
+   ((bn<s.distractedUntil&&s.leaveReason)?s.leaveReason:
+   (s.chasing?s.agenda:"🔎 교수님 어디 계시지?"))))));
+ x.font="800 15px system-ui";
+ let w=Math.max(126,x.measureText(txt).width+24),bx=s.x-w/2,by=s.y-88;
+ x.fillStyle=s.leaving?"#e8f4ff":"white";x.strokeStyle="#333";x.lineWidth=1.8;
+ x.beginPath();x.roundRect(bx,by,w,34,10);x.fill();x.stroke();
+ x.fillStyle="#111";x.textAlign="center";x.fillText(txt,s.x,by+23)
+}
+function teamSpeedMult(st){
+ let rage=st.team==="control"?controlRage:(st.team==="cognition"?cogRage:0);
+ return 1+Math.min(100,rage)*0.006;
+}
+function shopPos(){return {x:335*W/1120,y:650*H/760}}
+function taehunShopPos(){let p=shopPos();return {x:W-p.x,y:p.y}}
+const SHOP_KEYS=["carsim","hils","gpu","server"];
+function updateShopSelection(){
+ const btns=[...document.querySelectorAll(".shopGrid button[data-shop]")];
+ btns.forEach((b,i)=>b.classList.toggle("shopSelected",i===shopSelection));
+ if(btns[shopSelection])btns[shopSelection].focus({preventScroll:true});
+}
+function moveShopSelection(dx,dy){
+ let row=Math.floor(shopSelection/2),col=shopSelection%2;
+ col=(col+dx+2)%2;row=(row+dy+2)%2;
+ shopSelection=row*2+col;updateShopSelection();
+}
+function tryOpenShop(){
+ let a=shopPos(),b=taehunShopPos(),da=Math.hypot(P.x-a.x,P.y-a.y),db=Math.hypot(P.x-b.x,P.y-b.y);
+ if(Math.min(da,db)>115){toast="🛒 상점 가까이에서 "+keyLabel(binds.interact)+" 키를 누르세요";toastUntil=performance.now()+1200;return}
+ if(db<da){openTaehunShop();return}
+ taehunOpen=false;document.querySelector("#taehunModal").style.display="none";
+ keys={};
+ shopOpen=true;shopSelection=0;paused=true;pauseStarted=performance.now();
+ const modal=document.querySelector("#shopModal");modal.style.display="flex";syncResourceHud();syncTeamHud();updateShopSelection();
+}
+const TAEHUN_KEYS=["life","speed"];
+function syncResourceHud(){
+ const moneyEl=document.querySelector("#money");
+ const livesEl=document.querySelector("#dockLives");
+ const topLives=document.querySelector("#lives");
+ const waterEl=document.querySelector("#waterCount");
+ if(moneyEl)moneyEl.textContent=money;
+ if(livesEl)livesEl.textContent=lives;
+ if(topLives)topLives.textContent=lives;
+ if(waterEl)waterEl.textContent=waterCount;
+}
+function syncTeamHud(now=performance.now()){
+ const cb=document.querySelector("#controlBar");
+ const gb=document.querySelector("#cogBar");
+ const ct=document.querySelector("#controlTxt");
+ const gt=document.querySelector("#cogTxt");
+ const cs=document.querySelector("#controlStable");
+ const gs=document.querySelector("#cogStable");
+ if(cb)cb.style.width=controlRage+"%";
+ if(gb)gb.style.width=cogRage+"%";
+ if(ct)ct.textContent=Math.round(controlRage)+"%";
+ if(gt)gt.textContent=Math.round(cogRage)+"%";
+ if(cs)cs.textContent=now<controlStableUntil?"안정화 · 분노 상승 0.2배 · "+Math.ceil((controlStableUntil-now)/1000)+"초":"";
+ if(gs)gs.textContent=now<cogStableUntil?"안정화 · 분노 상승 0.2배 · "+Math.ceil((cogStableUntil-now)/1000)+"초":"";
+}
+function updateTaehunPrices(){
+ document.querySelector("#lifePrice").textContent=(100+lifeBuys*50)+"만원";
+ document.querySelector("#speedPrice").textContent=(50+speedBuys*25)+"만원";
+}
+function updateTaehunSelection(){
+ const btns=[...document.querySelectorAll(".taehunGrid button[data-taehun]")];
+ btns.forEach((b,i)=>b.classList.toggle("shopSelected",i===taehunSelection));
+ if(btns[taehunSelection])btns[taehunSelection].focus({preventScroll:true});
+}
+function openTaehunShop(){
+ shopOpen=false;document.querySelector("#shopModal").style.display="none";
+ keys={};
+ taehunOpen=true;taehunSelection=0;paused=true;pauseStarted=performance.now();updateTaehunPrices();
+ const modal=document.querySelector("#taehunModal");modal.style.display="flex";syncResourceHud();updateTaehunSelection();
+}
+function closeTaehunShop(){
+ if(!taehunOpen)return;
+ let now=performance.now(),d=now-pauseStarted;
+ taehunOpen=false;
+ document.querySelector("#taehunModal").style.display="none";
+ resumeFromShop(now,d);
+}
+function buyTaehun(kind){
+ let n=performance.now();
+ if(kind==="life"){
+   let price=100+lifeBuys*50;
+   if(money<price){syncResourceHud();toast="💸 연구수당이 부족합니다";toastUntil=n+1300;return}
+   money-=price;lives++;lifeBuys++;updateTaehunPrices();syncResourceHud();
+   toast="❤️ 목숨 +1! 다음 가격 "+(100+lifeBuys*50)+"만원";toastUntil=n+1500;
+ }else if(kind==="speed"){
+   let price=50+speedBuys*25;
+   if(money<price){syncResourceHud();toast="💸 연구수당이 부족합니다";toastUntil=n+1300;return}
+   money-=price;playerSpeedMult+=0.1;speedBuys++;updateTaehunPrices();syncResourceHud();
+   toast="🏃 교수님 기본 속도 +0.1배! 현재 "+playerSpeedMult.toFixed(1)+"배";toastUntil=n+1500;
+ }
+}
+function shiftPauseTimers(d){
+ t0+=d;for(const q of returnQueue)q.at+=d;
+ cd.door+=d;cd.dinner+=d;
+ doorUntil+=d;dinnerFreezeUntil+=d;dinnerSlowUntil+=d;
+ lastRageAt+=d;if(rageUntil)rageUntil+=d;
+ controlStableUntil+=d;cogStableUntil+=d;futsalUntil+=d;nextJoonAt+=d;if(nextLifeSpawn)nextLifeSpawn+=d;
+ for(const b of bombs)b.until+=d;
+ for(const fb of futsalBalls){fb.born+=d;fb.until+=d} if(joon){joon.until+=d;joon.nextDrop+=d}
+ for(const ss of students){ss.freezeUntil+=d;ss.distractedUntil+=d;ss.lastSeen+=d;ss.searchSince+=d;ss.wanderAt+=d;ss.pathAt+=d;ss.spawnGraceUntil+=d;ss.rageCrashUntil+=d;ss.feastFreezeUntil+=d;ss.feastSlowUntil+=d;ss.feastMsgUntil+=d;ss.specialNext+=d;ss.specialUntil+=d;ss.specialMsgUntil+=d;ss.dialogueUntil+=d;ss.dialogueNext+=d;}
+}
+function resumeFromShop(now,d){
+ // The paused animation loop is already alive, so do NOT start a second RAF loop.
+ // Reset timing/input/focus explicitly and let the existing loop resume next frame.
+ shiftPauseTimers(d);
+ paused=false;
+ pauseStarted=0;
+ last=now;
+ keys={};
+ flowDist=null;
+ syncResourceHud();
+ if(document.activeElement&&typeof document.activeElement.blur==="function")document.activeElement.blur();
+ try{C.focus({preventScroll:true})}catch(e){try{C.focus()}catch(_){}}
+}
+function closeShop(){
+ if(!shopOpen)return;
+ let now=performance.now(),d=now-pauseStarted;
+ shopOpen=false;
+ document.querySelector("#shopModal").style.display="none";
+ resumeFromShop(now,d);
+}
+function buyShop(kind){
+ let n=performance.now(),price=0,team="",strong=false,label="";
+ if(kind==="carsim"){price=25;team="control";label="CarSim"}
+ if(kind==="hils"){price=50;team="control";strong=true;label="HILS"}
+ if(kind==="gpu"){price=50;team="cognition";strong=true;label="GPU"}
+ if(kind==="server"){price=25;team="cognition";label="서버대여"}
+ if(money<price){syncResourceHud();toast="💸 연구수당이 부족합니다";toastUntil=n+1300;return}
+ money-=price;
+ syncResourceHud();
+ let drop=strong?30:10,dur=strong?35000:20000;
+ if(team==="control"){controlRage=Math.max(0,controlRage-drop);controlStableUntil=Math.max(controlStableUntil,n+dur)}
+ else{cogRage=Math.max(0,cogRage-drop);cogStableUntil=Math.max(cogStableUntil,n+dur)}
+ syncTeamHud(n);
+ toast="🛒 "+label+" 구매! "+(team==="control"?"제어팀":"인지팀")+" 분노 -"+drop;toastUntil=n+1500;
+}
+function spawnBomb(st,now){
+ let a=Math.atan2(P.y-st.y,P.x-st.x),dist=Math.min(220,Math.max(100,Math.hypot(P.x-st.x,P.y-st.y)*.55));
+ let bx=st.x+Math.cos(a)*dist,by=st.y+Math.sin(a)*dist;
+ bx=Math.max(60,Math.min(W-60,bx));by=Math.max(115,Math.min(H-60,by));
+ if(allBlockers(now).some(q=>hitRect(bx,by,42,q)))return;
+ bombs.push({x:bx,y:by,r:38,until:now+6000});if(bombs.length>5)bombs.shift();
+}
+function drawBombs(now){
+ bombs=bombs.filter(b=>now<b.until);
+ for(const b of bombs){
+   x.save();
+   x.textAlign="center";
+   x.font="38px sans-serif";
+   x.fillText("🕸️",b.x,b.y+12);
+   x.strokeStyle="#d9dde3";
+   x.lineWidth=2;
+   x.beginPath();x.arc(b.x,b.y,b.r,0,Math.PI*2);x.stroke();
+   x.restore();
+ }
+}
+function kickFutsalBall(st,now){
+ let ang=Math.atan2(P.y-st.y,P.x-st.x)+(Math.random()-.5)*0.45;
+ let speed=285;
+ futsalBalls.push({
+   x:st.x+Math.cos(ang)*28,
+   y:st.y+Math.sin(ang)*28,
+   vx:Math.cos(ang)*speed,
+   vy:Math.sin(ang)*speed,
+   born:now,
+   until:now+3200,
+   spin:0
+ });
+ if(futsalBalls.length>4)futsalBalls.shift();
+}
+function updateFutsalBalls(now,dt){
+ for(let i=futsalBalls.length-1;i>=0;i--){
+   const b=futsalBalls[i];
+   if(now>=b.until){futsalBalls.splice(i,1);continue}
+   let nx=b.x+b.vx*dt,ny=b.y;
+   if(allBlockers(now).some(q=>hitRect(nx,ny,12,q))){b.vx*=-0.72;nx=b.x+b.vx*dt}
+   b.x=nx;
+   ny=b.y+b.vy*dt;
+   if(allBlockers(now).some(q=>hitRect(b.x,ny,12,q))){b.vy*=-0.72;ny=b.y+b.vy*dt}
+   b.y=ny;
+   const pb=playableBounds();
+   if(b.x<13||b.x>W-13)b.vx*=-0.72;
+   if(b.y<pb.top+13||b.y>pb.bottom-13)b.vy*=-0.72;
+   b.x=Math.max(13,Math.min(W-13,b.x));
+   b.y=Math.max(pb.top+13,Math.min(pb.bottom-13,b.y));
+   b.vx*=Math.pow(.975,dt*60);
+   b.vy*=Math.pow(.975,dt*60);
+   b.spin+=dt*10;
+ }
+}
+function drawFutsalBalls(){
+ x.save();x.textAlign="center";
+ for(const b of futsalBalls){
+   x.save();x.translate(b.x,b.y);x.rotate(b.spin);
+   x.font="25px sans-serif";x.fillText("⚽",0,8);
+   x.restore();
+ }
+ x.restore();
+}
+function updateDoctorSpecial(st,now){
+ if(!st.isDoctor||st.leaving||now<dinnerFreezeUntil)return;
+ if(st.face.n==="Student 01"&&now>=st.specialNext){
+   st.specialNext=now+18000+Math.random()*9000;st.specialMsg="⚽ 풋살하자~";st.specialMsgUntil=now+2200;futsalUntil=Math.max(futsalUntil,now+6500);
+   kickFutsalBall(st,now);
+   toast="⚽ 풋살 이벤트! 축구공 킥 + 다른 학생 속도 1.2배";toastUntil=now+1800;
+ }
+ if(st.face.n==="Student 15"&&now>=st.specialNext){
+   st.specialNext=now+17000+Math.random()*9000;st.specialMsg="🕸️ 거미줄 친다!";st.specialMsgUntil=now+2200;spawnBomb(st,now);
+   toast="🕸️ 거미줄 이벤트가 발동했습니다";toastUntil=now+1700;
+ }
+ if(st.face.n==="Student 05"){
+   if(!st.specialState&&now>=st.specialNext){st.specialState="drunk";st.specialUntil=now+2500;st.specialMsg="으.. 취한다...";st.specialMsgUntil=st.specialUntil;}
+   else if(st.specialState==="drunk"&&now>=st.specialUntil){st.specialState="gorilla";st.specialUntil=now+6500;st.specialMsg="🦍 우오오오!";st.specialMsgUntil=st.specialUntil;toast="🦍 고릴라 모드가 발동했습니다!";toastUntil=now+1800;}
+   else if(st.specialState==="gorilla"&&now>=st.specialUntil){st.specialState="";st.specialNext=now+18000+Math.random()*9000;st.specialMsg="";st.specialMsgUntil=0;}
+ }
+}
+function chooseJoonSpawn(now){
+ // Sample the whole walkable map uniformly. Avoid professor proximity so Joon does not
+ // repeatedly pop up in the same corner/next to the player.
+ const candidates=[];
+ for(let i=0;i<70;i++){
+   let px=70+Math.random()*(W-140),py=60+Math.random()*(H-145);
+   if(Math.hypot(px-P.x,py-P.y)<260)continue;
+   if(allBlockers(now).some(q=>hitRect(px,py,25,q)))continue;
+   candidates.push({x:px,y:py});
+   if(candidates.length>=12)break;
+ }
+ if(candidates.length)return candidates[Math.floor(Math.random()*candidates.length)];
+ // Safe centered fallback instead of the old left-shop spawn.
+ return safeJoonPoint(W*.5,H*.5);
+}
+function safeJoonPoint(px,py){
+ const ok=(x,y)=>inPlayableArea(x,y,24)&&!allBlockers().some(q=>hitRect(x,y,24,q));
+ if(ok(px,py))return {x:px,y:py};
+ for(let r=28;r<=240;r+=22){
+   for(let k=0;k<20;k++){
+     let a=k/20*Math.PI*2,x=px+Math.cos(a)*r,y=py+Math.sin(a)*r;
+     if(ok(x,y))return {x,y};
+   }
+ }
+ return {x:W*.5,y:H*.5};
+}
+function chooseJoonTarget(now){
+ if(!joon)return;
+ let candidates=[];
+ for(let i=0;i<18;i++){
+   let tx=70+Math.random()*(W-140),ty=60+Math.random()*(H-145);
+   if(allBlockers(now).some(q=>hitRect(tx,ty,26,q)))continue;
+   let path=astar(joon.x,joon.y,tx,ty);
+   if(path.length||Math.hypot(joon.x-tx,joon.y-ty)<70)candidates.push({tx,ty});
+   if(candidates.length>=4)break;
+ }
+ if(candidates.length){
+   let c=candidates[Math.floor(Math.random()*candidates.length)];
+   joon.tx=c.tx;joon.ty=c.ty;
+ }else{
+   let c=safeJoonPoint(W*.5,H*.5);
+   joon.tx=c.x;joon.ty=c.y;
+ }
+ joon.targetAt=now;
+}
+function updateJoon(now,dt){
+ if(!joon&&now>=nextJoonAt){
+   let start=chooseJoonSpawn(now);
+   joon={
+     x:start.x,y:start.y,
+     tx:W*.5,ty:H*.55,
+     until:now+11000,
+     nextDrop:now+700,
+     step:0,
+     stuckFor:0,
+     lastX:start.x,lastY:start.y,
+     targetAt:now,
+     speech:"",
+     speechUntil:0,
+     nextSpeech:now+1200+Math.random()*1800
+   };
+   chooseJoonTarget(now);
+   nextJoonAt=now+35000+Math.random()*25000;
+   toast="🏓 예산관리자 등장! 예산을 관리하며 돈을 뿌립니다.";toastUntil=now+1800;
+ }
+ if(!joon)return;
+
+ if(now>=joon.nextSpeech){
+   const lines=["이게 맞아?","줴줴이야~"];
+   joon.speech=lines[Math.floor(Math.random()*lines.length)];
+   joon.speechUntil=now+1800;
+   joon.nextSpeech=now+3200+Math.random()*3200;
+ }
+
+ // Lifetime is absolute: even if Joon gets stuck, he always disappears on time.
+ if(now>=joon.until){
+   joon=null;
+   return;
+ }
+
+ // Re-pick target if reached or target is too old.
+ if(Math.hypot(joon.x-joon.tx,joon.y-joon.ty)<45 || now-joon.targetAt>2600){
+   chooseJoonTarget(now);
+ }
+
+ let vx=joon.tx-joon.x,vy=joon.ty-joon.y,l=Math.hypot(vx,vy)||1;
+ let ox=joon.x,oy=joon.y;
+ moveCollide(joon,vx/l*107.5*dt,vy/l*107.5*dt,20);
+ let jb=playableBounds();joon.x=Math.max(jb.left+20,Math.min(jb.right-20,joon.x));joon.y=Math.max(jb.top+20,Math.min(jb.bottom-20,joon.y));
+ joon.step+=dt;
+
+ // Wall-stuck watchdog: if almost no movement for ~0.45 s, rescue to a nearby
+ // walkable point and immediately select another reachable destination.
+ let moved=Math.hypot(joon.x-ox,joon.y-oy);
+ if(moved<Math.max(.25,107.5*dt*.15))joon.stuckFor+=dt;
+ else joon.stuckFor=0;
+
+ if(joon.stuckFor>0.45){
+   let p=safeJoonPoint(joon.x,joon.y);
+   joon.x=p.x;joon.y=p.y;joon.stuckFor=0;
+   chooseJoonTarget(now);
+ }
+
+ // Budget-manager gimmick: keep dropping research allowance while active.
+ if(now>=joon.nextDrop){
+   joon.nextDrop=now+900;
+   funds.push({
+     x:joon.x+(Math.random()-.5)*55,
+     y:joon.y+(Math.random()-.5)*55,
+     val:[5,10,10,20][Math.floor(Math.random()*4)],
+     born:now,
+     phase:Math.random()*6.28
+   });
+ }
+}
+function drawJoon(){
+ if(!joon)return;
+ let bob=Math.sin(joon.step*8)*2,sw=Math.sin(joon.step*8)*8;
+ x.save();x.translate(joon.x,joon.y+bob);
+ // goblin shadow
+ x.fillStyle="#0002";x.beginPath();x.ellipse(0,38,27,8,0,0,7);x.fill();
+ // yellow goblin legs
+ x.strokeStyle="#d8bf00";x.lineWidth=9;x.lineCap="round";
+ x.beginPath();x.moveTo(-8,18);x.lineTo(-11+sw*.5,42);x.stroke();
+ x.beginPath();x.moveTo(8,18);x.lineTo(11-sw*.5,42);x.stroke();
+ // goblin torso
+ x.fillStyle="#ffe600";x.beginPath();x.roundRect(-20,-10,40,35,12);x.fill();
+ // pointy goblin ears
+ x.beginPath();x.moveTo(-14,-32);x.lineTo(-31,-25);x.lineTo(-15,-18);x.fill();
+ x.beginPath();x.moveTo(14,-32);x.lineTo(31,-25);x.lineTo(15,-18);x.fill();
+ // arms
+ x.strokeStyle="#ffe600";x.lineWidth=10;
+ x.beginPath();x.moveTo(-17,-2);x.lineTo(-25-sw*.3,20);x.stroke();
+ x.beginPath();x.moveTo(17,-2);x.lineTo(25+sw*.3,20);x.stroke();
+ // use Student 07's profile face photo
+ ovalFace(joonFace(),0,-31,17,20);
+ // table-tennis paddle
+ x.font="25px sans-serif";x.textAlign="center";x.fillText("🏓",26,3);
+ x.restore();
+ // speech
+ if(joon.speech&&performance.now()<joon.speechUntil){
+   x.font="900 15px system-ui";
+   let swd=Math.max(108,x.measureText(joon.speech).width+24);
+   let sx0=joon.x-swd/2,sy0=joon.y-98;
+   x.fillStyle="#fff";x.strokeStyle="#333";x.lineWidth=1.8;
+   x.beginPath();x.roundRect(sx0,sy0,swd,34,10);x.fill();x.stroke();
+   x.fillStyle="#111";x.textAlign="center";x.fillText(joon.speech,joon.x,sy0+23);
+ }
+ // label
+ x.font="800 11px system-ui";let label="예산관리자";
+ let tw=x.measureText(label).width;x.fillStyle="#111d";x.fillRect(joon.x-tw/2-5,joon.y+52,tw+10,17);
+ x.fillStyle="white";x.textAlign="center";x.fillText(label,joon.x,joon.y+64);
+}
+function loseLife(st,now){
+ if(now<hitInvUntil)return;
+ lives--;hitInvUntil=now+2000;P.inv=hitInvUntil;
+ for(const ss of students){
+   if(ss.leaving)continue;
+   ss.chasing=false;
+   ss.path=[];
+   ss.pathAt=0;
+   ss.lastSeen=0;
+   ss.searchSince=now;
+   ss.distractedUntil=Math.max(ss.distractedUntil,hitInvUntil);
+   chooseWander(ss,now);
+ }
+ let a=Math.atan2(st.y-P.y,st.x-P.x);st.x+=Math.cos(a)*80;st.y+=Math.sin(a)*80;
+ toast=lives>0?"💥 업무 충돌! 목숨 -1 · 2초간 학생들이 교수님을 놓칩니다! (남은 "+lives+")":"💥 목숨이 모두 소진되었습니다";toastUntil=now+1800;
+ if(lives<=0)end(st);
+}
+function background(now){
+ x.fillStyle="#d8d5cc";x.fillRect(0,0,W,H);
+ x.strokeStyle="#4c5157";x.lineWidth=10;x.strokeRect(5,5,W-10,H-10);
+ x.strokeStyle="#c3beb2";x.lineWidth=1;
+ for(let gx=0;gx<W;gx+=70){x.beginPath();x.moveTo(gx,55);x.lineTo(gx,H);x.stroke()}
+ for(let gy=55;gy<H;gy+=70){x.beginPath();x.moveTo(0,gy);x.lineTo(W,gy);x.stroke()}
+ drawMap();
+
+ const sx=W/1120,sy=H/760;
+
+ // Professor office
+ x.fillStyle="#71876c";x.fillRect(28*sx,95*sy,155*sx,105*sy);
+ x.fillStyle="#4d382a";x.fillRect(70*sx,125*sy,62*sx,75*sy);
+ x.fillStyle="white";x.font="800 15px system-ui";x.fillText("교수실",105*sx,118*sy);
+ if(now<doorUntil){x.fillStyle="#111c";x.fillRect(43*sx,207*sy,124*sx,27*sy);x.fillStyle="#fff";x.font="800 12px system-ui";x.fillText("🔒 문 잠김",105*sx,225*sy)}
+
+
+ // Juhwan shop (photo placeholder)
+ let sp=shopPos();
+ x.fillStyle="#d7b35a";x.fillRect(sp.x-75,sp.y-48,150,96);x.strokeStyle="#594720";x.lineWidth=3;x.strokeRect(sp.x-75,sp.y-48,150,96);
+ x.fillStyle="#fff7d2";x.font="900 14px system-ui";x.textAlign="center";x.fillText("🛒 연구지원 상점",sp.x,sp.y-20);
+ x.font="28px sans-serif";x.fillText("👤",sp.x,sp.y+15);x.fillStyle="#333";x.font="800 11px system-ui";x.fillText("오셨어요? · "+keyLabel(binds.interact),sp.x,sp.y+37);
+ // Taehun shop: mirrored across the map center
+ let tp=taehunShopPos();
+ x.fillStyle="#6aaee8";x.fillRect(tp.x-82,tp.y-52,164,104);x.strokeStyle="#163b5c";x.lineWidth=4;x.strokeRect(tp.x-82,tp.y-52,164,104);
+ x.fillStyle="#ffffff";x.fillRect(tp.x-69,tp.y-41,138,28);
+ x.fillStyle="#17324d";x.font="900 15px system-ui";x.textAlign="center";x.fillText("🛒 강화 상점",tp.x,tp.y-21);
+ x.font="30px sans-serif";x.fillText("👤",tp.x,tp.y+17);x.fillStyle="#0e2f4a";x.font="900 12px system-ui";x.fillText("❤️ 목숨 · 🏃 속도 강화 · "+keyLabel(binds.interact),tp.x,tp.y+42);
+ // Actual exits
+ x.fillStyle="#397d55";x.font="800 11px system-ui";
+ x.fillRect(W/2-38,8,76,22);x.fillStyle="#fff";x.fillText("EXIT ↑",W/2,24);
+ x.fillStyle="#397d55";x.fillRect(W-78,H*.48-11,70,22);x.fillStyle="#fff";x.fillText("EXIT →",W-43,H*.48+5);
+ x.fillStyle="#397d55";x.fillRect(W*.62-38,H-30,76,22);x.fillStyle="#fff";x.fillText("EXIT ↓",W*.62,H-14);
+ x.fillStyle="#397d55";x.fillRect(8,H*.68-11,70,22);x.fillStyle="#fff";x.fillText("← EXIT",43,H*.68+5);
+}
+function getRecords(){try{let a=JSON.parse(localStorage.getItem("asclEscapeTop10")||"[]");return Array.isArray(a)?a.filter(Number.isFinite).slice(0,10):[]}catch(e){return[]}}
+function saveRecord(sec){let old=getRecords(),best=old.length?old[0]:-1,isNew=sec>best;let a=old.concat(sec).sort((x,y)=>y-x).slice(0,10);try{localStorage.setItem("asclEscapeTop10",JSON.stringify(a))}catch(e){}return{a,isNew}}
+function end(st){
+ if(!playing)return;playing=false;
+ let sec=(performance.now()-t0)/1000,rec=saveRecord(sec);
+ why.innerHTML="❤️ 목숨 3개를 모두 사용했습니다. 마지막 충돌: "+st.face.n+" 학생의 <b>"+st.agenda+"</b>";
+ record.innerHTML=(rec.isNew?"<strong style='font-size:20px'>🎉 축하합니다!! "+sec.toFixed(1)+"초 동안 생존했습니다</strong>":"⏱ 이번 기록 <b>"+sec.toFixed(1)+"초</b>")+
+ "<br><br><b>🏆 기존 기록 최대 10개</b><ol style='text-align:left;display:inline-block;margin:8px auto 0;padding-left:28px'>"+
+ rec.a.map((v,i)=>"<li>"+(i+1)+"위 · <b>"+v.toFixed(1)+"초</b></li>").join("")+
+ "</ol><br>💰 남은 연구수당 "+money+"만원 · 💧 물 "+waterCount+"개";
+ over.classList.remove("hide");
+}
+function updateSkill(id,end,now,label){let e=document.querySelector(id);if(now>=end){e.className="skill ready";e.textContent=label+" ✓"}else{e.className="skill cool";e.textContent=label+" "+Math.ceil((end-now)/1000)+"s"}}
+
+function skillDinner(){
+ let n=performance.now();if(n<cd.dinner)return;
+ if(money<30){toast="💸 회식 제안에는 연구수당 30만원이 필요합니다";toastUntil=n+1800;return}
+ money-=30;syncResourceHud();
+ cd.dinner=n+25000;dinnerFreezeUntil=n+5000;dinnerSlowUntil=n+8000;
+ for(const st of students){
+   st.chasing=false;st.path=[];st.pathAt=0;st.stuck=0;
+   st.freezeUntil=Math.max(st.freezeUntil,n+5000);
+   st.distractedUntil=Math.max(st.distractedUntil,n+5000);
+   st.feastFreezeUntil=Math.max(st.feastFreezeUntil,n+5000);
+   st.feastSlowUntil=Math.max(st.feastSlowUntil,n+8000);
+   st.feastMsgUntil=Math.max(st.feastMsgUntil,n+5000);
+ }
+ toast="🍖 회식 제안 -30만원! 학생 전원 5초 스턴 → 3초간 0.9배";toastUntil=n+1900;
+}
+function spawnWater(now){
+ for(let tries=0;tries<80;tries++){
+   let wx=65+Math.random()*(W-130),wy=70+Math.random()*(H-140),bad=false;
+   for(const q of mapRects())if(hitRect(wx,wy,30,q)){bad=true;break}
+   if(!bad){waterItems.push({x:wx,y:wy,phase:Math.random()*6.28});if(waterItems.length>5)waterItems.shift();return}
+ }
+}
+function drawWater(now){
+ for(const w of waterItems){
+   let bob=Math.sin(now/220+w.phase)*4;
+   x.fillStyle="#0003";x.beginPath();x.ellipse(w.x,w.y+13,16,5,0,0,7);x.fill();
+   x.font="28px sans-serif";x.textAlign="center";x.fillText("💧",w.x,w.y+bob);
+   x.fillStyle="#17324d";x.font="900 10px system-ui";x.fillText("Q 물",w.x,w.y+22+bob);
+ }
+}
+function useWater(){
+ let n=performance.now();
+ if(waterCount<=0){toast="💧 물이 없습니다! 바닥의 물을 주우세요";toastUntil=n+1500;return}
+ if(!(rageStudent&&n<rageUntil)){toast="💧 지금 불붙은 학생이 없습니다";toastUntil=n+1500;return}
+ let st=rageStudent;
+ if(Math.hypot(P.x-st.x,P.y-st.y)>260){toast="💧 불붙은 학생에게 더 가까이 가세요";toastUntil=n+1500;return}
+ waterCount--;
+ rageStudent=null;rageUntil=0;
+ st.rageCrashUntil=n+5000;
+ st.noRageUntil=n+5000;
+ st.chasing=false;st.searchSince=n;st.path=[];st.pathAt=0;
+ st.leaveReason="뭐하고 있었더라?";
+ st.dialogueText="뭐하고 있었더라?";
+ st.dialogueUntil=n+2600;
+ st.dialogueNext=n+6500;
+ toast="💦 촤아악! "+st.face.n+": 뭐하고 있었더라?";toastUntil=n+1800;
+}
+function spawnLife(now){
+ if(lifeItems.length)return;
+ for(let tries=0;tries<100;tries++){
+   let lx=70+Math.random()*(W-140),ly=75+Math.random()*(H-150),bad=false;
+   if(Math.hypot(lx-P.x,ly-P.y)<180)continue;
+   for(const q of mapRects())if(hitRect(lx,ly,32,q)){bad=true;break}
+   if(!bad){
+     lifeItems.push({x:lx,y:ly,phase:Math.random()*6.28,born:now});
+     return true;
+   }
+ }
+ return false;
+}
+function drawLifeItems(now){
+ for(const h of lifeItems){
+   let bob=Math.sin(now/210+h.phase)*4;
+   x.fillStyle="#0003";x.beginPath();x.ellipse(h.x,h.y+15,19,6,0,0,7);x.fill();
+   x.font="34px sans-serif";x.textAlign="center";x.fillText("❤️",h.x,h.y+bob);
+   x.fillStyle="#7c1f2a";x.font="900 10px system-ui";x.fillText("목숨 +1",h.x,h.y+24+bob);
+ }
+}
+function spawnFund(now){
+ // place only in walkable cells, away from walls
+ for(let tries=0;tries<80;tries++){
+   let fx=65+Math.random()*(W-130),fy=70+Math.random()*(H-140);
+   let bad=false;for(const q of mapRects())if(hitRect(fx,fy,30,q)){bad=true;break}
+   if(!bad){let val=[5,10,10,20,30,50][Math.floor(Math.random()*6)];funds.push({x:fx,y:fy,val,born:now,phase:Math.random()*6.28});return}
+ }
+}
+function drawFunds(now){
+ for(const f of funds){
+   let bob=Math.sin(now/240+f.phase)*3;
+   x.fillStyle="#0003";x.beginPath();x.ellipse(f.x,f.y+12,20,6,0,0,7);x.fill();
+   x.fillStyle="#f3d35a";x.beginPath();x.roundRect(f.x-22,f.y-14+bob,44,25,5);x.fill();
+   x.strokeStyle="#765f12";x.lineWidth=2;x.strokeRect(f.x-22,f.y-14+bob,44,25);
+   x.fillStyle="#493c0c";x.font="900 11px system-ui";x.textAlign="center";x.fillText("₩ "+f.val+"만",f.x,f.y+3+bob);
+ }
+}
+function loop(now){
+ pathPlansThisFrame=0;
+ if(paused){
+   // Defensive reset: paused frames never inherit a world-camera transform.
+   x.setTransform(1,0,0,1,0,0);
+   last=now;requestAnimationFrame(loop);return
+ }
+ // Every active frame starts from the identity transform.
+ x.setTransform(1,0,0,1,0,0);
+ let dt=Math.min(.033,(now-last)/1000||0);last=now;
+ CAM.x=Math.max(0,Math.min(Math.max(0,W-VW),P.x-VW/2)); CAM.y=Math.max(0,Math.min(Math.max(0,H-VH),P.y-VH/2));
+ x.save();x.translate(-CAM.x,-CAM.y);background(now);drawFunds(now);drawWater(now);drawLifeItems(now);updateFutsalBalls(now,dt);drawFutsalBalls();drawBombs(now);drawJoon();
+ if(playing){
+  let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0),len=Math.hypot(dx,dy)||1;
+  let boost=heldBind("boost")&&coffee>0;if(boost) coffee=Math.max(0,coffee-dt*42);
+  else coffee=Math.min(100,coffee+dt*5);
+  let speed=(boost?325:215)*playerSpeedMult;let invSpeedMult=now<hitInvUntil?2:1;
+ moveCollide(P,(dx/len*speed*dt)*invSpeedMult,(dy/len*speed*dt)*invSpeedMult,P.r);if(dx||dy)P.step+=dt*1.2;
+  let pb=playableBounds();P.x=Math.max(pb.left,Math.min(pb.right,P.x));P.y=Math.max(pb.top,Math.min(pb.bottom,P.y));
+  // students who previously gave up may return after their personal delay
+  if(now>=nextSpawnAllowed){
+   let dueIndex=-1,dueAt=Infinity;
+   for(let qi=0;qi<returnQueue.length;qi++){
+     if(returnQueue[qi].at<=now&&returnQueue[qi].at<dueAt){dueAt=returnQueue[qi].at;dueIndex=qi}
+   }
+   if(dueIndex>=0){
+     const item=returnQueue[dueIndex];
+     if(students.some(st=>st.face&&st.face.n===item.face.n)){item.at=now+700}
+     else{
+       const ok=spawn(now,item.face);
+       if(ok){
+         returnQueue.splice(dueIndex,1);
+         nextSpawnAllowed=now+900+Math.random()*350;
+         toast="🚪 "+item.face.n+" 학생이 다시 들어왔습니다";
+         toastUntil=now+1200;
+       }else item.at=now+700;
+     }
+   }
+ }
+  let elapsed=now-t0;
+  let gameSec=elapsed/1000;
+  if(gameSec>=20){
+    let cRate=(now<controlStableUntil?.2:1),gRate=(now<cogStableUntil?.2:1);
+    controlRage=Math.min(100,controlRage+dt*1.25*cRate);
+    cogRage=Math.min(100,cogRage+dt*1.25*gRate);
+  }
+  updateJoon(now,dt);
+  bombs=bombs.filter(b=>now<b.until);
+  if(!lastRageAt)lastRageAt=now;
+  if(now-lastRageAt>=20000&&now>=dinnerFreezeUntil){
+    lastRageAt=now;
+    let eligible=students.filter(z=>!z.leaving&&now>=z.rageCrashUntil&&now>=z.feastFreezeUntil&&now>=(z.noRageUntil||0));
+    let pool=eligible.filter(z=>Math.hypot(z.x-P.x,z.y-P.y)>=280);
+    // If nobody is far enough away, use the farthest eligible student rather than
+    // igniting someone right beside the professor.
+    if(!pool.length&&eligible.length){
+      let farthest=eligible.slice().sort((a,b)=>Math.hypot(b.x-P.x,b.y-P.y)-Math.hypot(a.x-P.x,a.y-P.y))[0];
+      pool=[farthest];
+    }
+    if(pool.length){
+      rageStudent=pool[Math.floor(Math.random()*pool.length)];
+      rageUntil=now+4000;
+      rageStudent.chasing=false;
+      rageStudent.distractedUntil=0;
+      rageStudent.freezeUntil=0;
+      rageStudent.searchSince=now;
+      rageStudent.wanderAt=0;
+      rageStudent.path=[];
+      toast="🔥 "+rageStudent.face.n+" 학생 폭주! 4초간 교수님을 미친 듯이 찾습니다!";
+      toastUntil=now+2200;
+    }
+  }
+  if(rageStudent&&now>=rageUntil){
+    rageStudent.rageCrashUntil=now+5000;
+    rageStudent.chasing=false;rageStudent.searchSince=now;rageStudent.path=[];
+    rageStudent.dialogueText="뭐하고 있었더라?";
+    rageStudent.dialogueUntil=now+2600;
+    rageStudent.dialogueNext=now+6500;
+    toast="🔥 불이 꺼졌습니다 · "+rageStudent.face.n+": 뭐하고 있었더라?";toastUntil=now+2000;
+    rageStudent=null;rageUntil=0;
+  }
+  if(!lastWaterSpawn||now-lastWaterSpawn>12000){if(waterItems.length<5)spawnWater(now);lastWaterSpawn=now;}
+  if(!lastFundSpawn||now-lastFundSpawn>5200){if(funds.length<10)spawnFund(now);lastFundSpawn=now;}
+  if(!nextLifeSpawn)nextLifeSpawn=now+18000+Math.random()*14000;
+  if(!lifeItems.length&&now>=nextLifeSpawn){
+    if(spawnLife(now))nextLifeSpawn=now+28000+Math.random()*22000;
+    else nextLifeSpawn=now+3000;
+  }
+  for(let wi=waterItems.length-1;wi>=0;wi--){if(Math.hypot(P.x-waterItems[wi].x,P.y-waterItems[wi].y)<42){waterCount++;waterItems.splice(wi,1);toast="💧 물 획득! Q로 사용 ("+waterCount+"개)";toastUntil=now+1300;}}
+  for(let hi=lifeItems.length-1;hi>=0;hi--){
+    if(Math.hypot(P.x-lifeItems[hi].x,P.y-lifeItems[hi].y)<44){
+      lives++;
+      lifeItems.splice(hi,1);
+      nextLifeSpawn=now+28000+Math.random()*22000;
+      toast="❤️ 목숨 +1 획득! 현재 "+lives+"개";
+      toastUntil=now+1600;
+    }
+  }
+  for(let fi=funds.length-1;fi>=0;fi--){if(Math.hypot(P.x-funds[fi].x,P.y-funds[fi].y)<42){money+=funds[fi].val;toast="💰 연구수당 +"+funds[fi].val+"만원!";toastUntil=now+1300;funds.splice(fi,1);}}
+  let interval=Math.max(900,1900-elapsed/28);
+  if(now>=nextSpawnAllowed&&now-lastSpawn>interval){
+    if(spawn(now)){lastSpawn=now;nextSpawnAllowed=now+900+Math.random()*350}
+  }
+  for(let i=students.length-1;i>=0;i--){let s=students[i];s.life-=dt*1000;updateDoctorSpecial(s,now);triggerPersonalDialogue(s,now);
+   // Students sometimes give up and walk naturally off-screen.
+   if(!s.isDoctor&&!s.leaving && !(s===rageStudent&&now<rageUntil) && (s.life<=0 || (Math.random()<dt*.0015 && students.length>2))){s.leaving=true;s.leaveReason=["😩 교수님 어디 계신 거야…","😭 오늘도 못 찾았다…","📧 그냥 메일로 보내야겠다…","😮‍💨 내일 다시 와야지…","🥲 마감은 오늘인데…","☕ 일단 커피부터 마시자…"][Math.floor(Math.random()*4)];chooseExit(s)}
+   // Even after giving up and heading for an EXIT, a student can spot the professor again.
+   // Exception: forced skill effects (door/conference/trip) remain protected for their 5-second duration.
+   let forcedEscape=(now<dinnerFreezeUntil)||(!s.isDoctor&&now<doorUntil);
+   if(s.leaving&&!forcedEscape&&canSeeProfessor(s)){
+     s.leaving=false;
+     s.exitPoint=null;
+     s.chasing=true;
+     s.lastSeen=now;
+     s.searchSince=now;
+     s.leaveReason="";
+     s.path=[];
+     s.pathAt=0;
+     s.stuck=0;
+     toast="👀 "+s.face.n+" 학생이 교수님을 다시 발견했습니다!";
+     toastUntil=now+900;
+   }
+   if(s.doorEvacuating){
+     if(now>=doorUntil || !hitRect(s.x,s.y,s.r,professorOfficeRect())){
+       s.doorEvacuating=false;s.path=[];s.pathAt=0;chooseWander(s,now);
+     }
+   }
+   let raging=(s===rageStudent&&now<rageUntil);
+   let feastFrozen=(now<dinnerFreezeUntil||now<s.feastFreezeUntil);
+   let distracted=!s.leaving&&(now<s.distractedUntil||feastFrozen);
+   if(raging&&!s.leaving){
+     // Frenzy search: rapidly sweep points around the professor; direct chase still requires line-of-sight.
+     if(s.wanderAt===0||now-s.wanderAt>650||Math.hypot(s.x-s.wanderX,s.y-s.wanderY)<45){
+       let aa=Math.random()*Math.PI*2,dd=70+Math.random()*260;
+       s.wanderX=Math.max(45,Math.min(W-45,P.x+Math.cos(aa)*dd));
+       s.wanderY=Math.max(48,Math.min(H-82,P.y+Math.sin(aa)*dd));
+       s.wanderAt=now;s.path=[];
+     }
+   }
+   // State machine: wander/search first; chase only after direct line-of-sight.
+   if(!s.leaving&&!distracted){
+     if(now<s.spawnGraceUntil){
+       s.chasing=false;
+       if(!s.wanderAt){s.wanderX=W*.5;s.wanderY=H*.5;s.wanderAt=now;s.path=[];}
+     }else if(canSeeProfessor(s)){s.chasing=true;s.lastSeen=now;s.searchSince=now;}
+     else if(s.chasing&&now-s.lastSeen>2200){s.chasing=false;s.searchSince=now;chooseWander(s,now);}
+   }
+   // If a student searches for a while without finding the professor, leave the building.
+   // They are queued to return later, preventing idle clusters at unreachable points.
+   if(!s.isDoctor&&!s.leaving&&!s.chasing&&!distracted&&!raging&&now-s.searchSince>6500){
+     s.leaving=true;s.leaveReason="🔎 못 찾겠다… 나갔다가 다시 와야지";chooseExit(s);
+   }
+   if(!s.leaving&&!s.chasing&&!distracted&&!raging&&now>=s.spawnGraceUntil&&(s.wanderAt===0||now-s.wanderAt>3200||Math.hypot(s.x-s.wanderX,s.y-s.wanderY)<55))chooseWander(s,now);
+   if(distracted&&(s.wanderAt===0||Math.hypot(s.x-s.wanderX,s.y-s.wanderY)<55)){chooseWander(s,now);}
+   let goalX=s.doorEvacuating?s.doorExitX:(s.leaving?s.tx:((s.chasing&&!distracted)?P.x:s.wanderX));
+   let goalY=s.doorEvacuating?s.doorExitY:(s.leaving?s.ty:((s.chasing&&!distracted)?P.y:s.wanderY));
+   let exitDist=s.leaving&&s.exitPoint?Math.hypot(s.x-s.exitPoint.x,s.y-s.exitPoint.y):1e9;
+   if(s.leaving&&s.exitPoint&&exitDist<92){
+     // EXIT reached: remove immediately, then return exactly 5 seconds later.
+     returnQueue.push({face:s.face,at:now+5000+Math.random()*1400,id:s.face.n+"-"+Math.round(now)});
+     students.splice(i,1);gone++;
+     toast="🚪 "+s.face.n+" 학생 퇴장 · 5초 후 복귀";toastUntil=now+900;
+     continue;
+   }
+   let atExit=false;
+   let nt=navTarget(s,goalX,goalY,now),tx=nt.x,ty=nt.y;
+   let vx=tx-s.x,vy=ty-s.y,l=Math.hypot(vx,vy)||1;{
+     let feastMult=(now<dinnerFreezeUntil||now<s.feastFreezeUntil)?0:((now<dinnerSlowUntil||now<s.feastSlowUntil)?.9:1);
+     let crashMult=(now<s.rageCrashUntil?.5:1),teamMult=teamSpeedMult(s);
+     let futsalMult=(now<futsalUntil&&s.face.n!=="Student 01")?1.2:1;
+     let specialMult=(s.face.n==="Student 05"&&s.specialState==="drunk")?.45:((s.face.n==="Student 05"&&s.specialState==="gorilla")?1.5:1);
+     let eff=(now<s.freezeUntil?0:s.s*s.speedMult*(raging?1.85:1)*feastMult*crashMult*teamMult*futsalMult*specialMult);
+     if(s.leaving&&!atExit){
+       let sepX=0,sepY=0;
+       for(const o of students)if(o!==s&&o.leaving){let dd=Math.hypot(s.x-o.x,s.y-o.y);if(dd>0&&dd<55){sepX+=(s.x-o.x)/dd*(55-dd);sepY+=(s.y-o.y)/dd*(55-dd);}}
+       vx+=sepX*.7;vy+=sepY*.7;l=Math.hypot(vx,vy)||1;
+     }
+     let mx=vx/l*eff*dt,my=vy/l*eff*dt,ox=s.x,oy=s.y;
+     moveStudentCollide(s,mx,my,s.r,now);
+     if(!s.leaving){
+       let sb=playableBounds();
+       s.x=Math.max(sb.left+s.r,Math.min(sb.right-s.r,s.x));
+       s.y=Math.max(sb.top+s.r,Math.min(sb.bottom-s.r,s.y));
+     }
+     // Wall-stuck prevention: detect near-zero progress, re-plan, then physically rescue
+     // the student to the closest walkable cell if the blockage persists.
+     let progressed=Math.hypot(s.x-ox,s.y-oy);
+     if(eff>0&&progressed<Math.max(.4,eff*dt*.22)){
+       s.stuck=(s.stuck||0)+dt;
+       if(s.stuck>.14){s.path=[];s.pathAt=0;flowDist=null;}
+       if(s.stuck>.34){
+         if(s.doorEvacuating){
+           s.path=[];s.pathAt=0;s.stuck=0;
+         }else{
+           rescueStudentFromWall(s,now);
+           flowDist=null;
+         }
+       }
+     }else{s.stuck=0;}
+   }s.step+=dt*(s.s/80);
+   if(raging){
+     x.save();x.textAlign="center";
+     let pulse=1+Math.sin(now/75)*.12;
+     for(let k=0;k<10;k++){
+       let a=k/10*Math.PI*2+now/260,rr=(31+(k%3)*8)*pulse;
+       x.font=(20+(k%2)*7)+"px sans-serif";
+       x.fillText("🔥",s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr+6);
+     }
+     x.restore();
+   }
+   bubble(s);
+   if(s.face.n==="Student 05"&&s.specialState==="gorilla"){x.font="50px sans-serif";x.textAlign="center";x.fillText("🦍",s.x,s.y+12);x.fillStyle="#111";x.font="800 11px system-ui";x.fillText("Student 05",s.x,s.y+48)}
+   else character(s.face.i,s.x,s.y,s.face.n,s.step,false,vx>=0?1:-1);
+   if(!s.leaving&&s.chasing&&now>P.inv&&Math.hypot(P.x-s.x,P.y-s.y)<43){loseLife(s,now);if(!playing)break}
+  }
+  time.textContent=(elapsed/1000).toFixed(1);document.querySelector("#lives").textContent=lives;cnt.textContent=students.filter(s=>!s.leaving&&s.chasing&&performance.now()>=s.distractedUntil).length;document.querySelector("#money").textContent=money;document.querySelector("#waterCount").textContent=waterCount;document.querySelector("#dockLives").textContent=lives;document.querySelector("#coffeeTxt").textContent=Math.round(coffee)+"%";document.querySelector("#coffeeFill").style.width=coffee+"%";document.querySelector("#active").textContent=students.length;document.querySelector("#gone").textContent=gone;document.querySelector("#waiting").textContent=returnQueue.length;document.querySelector("#visited").textContent=spawnedNames.size;document.querySelector("#total").textContent=16;
+  syncTeamHud(now);
+
+ }
+ if(now>=hitInvUntil || Math.floor(now/120)%2===0){
+  character(prof,P.x,P.y,"Professor",P.step,true,1);
+ }
+ x.restore();
+ if(now<toastUntil){x.font="800 15px system-ui";let tw=Math.min(VW-40,x.measureText(toast).width+30);x.fillStyle="#111e";x.fillRect(VW/2-tw/2,VH-65,tw,38);x.fillStyle="white";x.textAlign="center";x.fillText(toast,VW/2,VH-40)}
+ // minimap
+ let mw=190,mh=120,mx=VW-215,my=62;
+ x.fillStyle="#10151ddd";x.fillRect(mx,my,mw,mh);x.strokeStyle="#ffffff55";x.strokeRect(mx,my,mw,mh);
+ x.fillStyle="#ffffff22";
+ for(const q of mapRects())x.fillRect(mx+q.x/W*mw,my+q.y/H*mh,Math.max(1,q.w/W*mw),Math.max(1,q.h/H*mh));
+ x.fillStyle="#fff";x.beginPath();x.arc(mx+P.x/W*mw,my+P.y/H*mh,3,0,7);x.fill();let spm=shopPos(),tpm=taehunShopPos();x.fillStyle="#ffd24a";x.fillRect(mx+spm.x/W*mw-2,my+spm.y/H*mh-2,4,4);x.fillStyle="#75b9ef";x.fillRect(mx+tpm.x/W*mw-2,my+tpm.y/H*mh-2,4,4);x.fillStyle="#e14b3c";for(const b of bombs){x.beginPath();x.arc(mx+b.x/W*mw,my+b.y/H*mh,2,0,7);x.fill()}
+ x.fillStyle="#fff";x.font="700 10px system-ui";x.textAlign="left";x.fillText("MINIMAP",mx+5,my+12);
+ updateSkill("#s1",cd.door,now,keyLabel(binds.door)+" 🚪 문 잠그기 5만원");updateSkill("#s2",cd.dinner,now,keyLabel(binds.dinner)+" 🍖 회식 제안 30만원");
+ let activeFx=[];
+ if(now<doorUntil)activeFx.push("🔒 문 잠김 "+((doorUntil-now)/1000).toFixed(1)+"초");
+ if(now<dinnerFreezeUntil)activeFx.push("🍖 회식 중 "+((dinnerFreezeUntil-now)/1000).toFixed(1)+"초");
+ else if(now<dinnerSlowUntil)activeFx.push("🍖 배부름 0.9배 "+((dinnerSlowUntil-now)/1000).toFixed(1)+"초");
+ if(rageStudent&&now<rageUntil)activeFx.push("🔥 "+rageStudent.face.n+" 폭주 "+((rageUntil-now)/1000).toFixed(1)+"초");
+ if(now<futsalUntil)activeFx.push("⚽ 풋살 버프 "+((futsalUntil-now)/1000).toFixed(1)+"초");
+ let fxHud=document.querySelector("#effectTimer");
+ if(fxHud){fxHud.textContent=activeFx.length?"⏱ "+activeFx.join(" · "):"⏱ 활성 효과 없음";fxHud.classList.toggle("on",activeFx.length>0);}
+ requestAnimationFrame(loop)
+} document.querySelector("#total").textContent=faces.length;requestAnimationFrame(loop);
+</script></body></html>
